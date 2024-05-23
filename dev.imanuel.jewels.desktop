@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=jewels
+Comment=Jewels Inventory Desktop Client
+Version=1.0
+Exec=jewels
+Icon=jewels
+Type=Application
+Terminal=false
+# Add an actual main category here (and possibly applicable additional ones)
+#   https://specifications.freedesktop.org/menu-spec/latest/apa.html#main-category-registry
+Categories=System;
