@@ -35,10 +35,6 @@ makepkg-arch:
   artifacts:
     paths:
       - jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}-x86_64.pkg.tar.zst
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: always
-    - when: never
 
 deploy-arch-package:
   stage: deploy
