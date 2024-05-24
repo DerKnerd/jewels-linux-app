@@ -30,8 +30,7 @@ makepkg-arch:
   extends:
     - .arch-linux
   script:
-    - useradd ci
-    - chown -R ci:ci ./jewels ./dev.imanuel.jewels.desktop ./dev.imanuel.jewels.autostart.desktop ./dev.imanuel.jewels.svg
+    - chown -R ci:ci ${CI_PROJECT_DIR}
     - sudo -u ci makepkg
   artifacts:
     paths:
