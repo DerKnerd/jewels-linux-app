@@ -29,28 +29,6 @@ target_link_libraries(jewels_static PUBLIC
         KF6::ConfigGui
 )
 
-qt_add_library(jewels_collection_static
-        Jewels.cpp
-        device/Bios.cpp
-        device/Mainboard.cpp
-        device/Kernel.cpp
-        device/OperatingSystem.cpp
-        device/Utils.cpp
-        device/Device.cpp
-        device/Drive.cpp
-        device/Cpu.cpp
-)
-
-target_link_libraries(jewels_collection_static PUBLIC
-        Qt6::Core
-        Qt6::Concurrent
-        Qt6::DBus
-        Qt6::Qml
-        KF6::CoreAddons
-        KF6::ConfigCore
-        KF6::ConfigGui
-)
-
 target_include_directories(jewels_static PRIVATE ${CMAKE_BINARY_DIR})
 
 target_link_libraries(jewels_static PUBLIC Qt::Widgets)
@@ -62,8 +40,17 @@ add_executable(jewels
         resources.qrc
         main.cpp
         app.cpp
+        Jewels.cpp
+        device/Bios.cpp
+        device/Mainboard.cpp
+        device/Kernel.cpp
+        device/OperatingSystem.cpp
+        device/Utils.cpp
+        device/Device.cpp
+        device/Drive.cpp
+        device/Cpu.cpp
 )
 
-target_link_libraries(jewels PRIVATE jewels_static jewels_staticplugin jewels_collection_static)
+target_link_libraries(jewels PRIVATE jewels_static jewels_staticplugin)
 
 install(TARGETS jewels ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

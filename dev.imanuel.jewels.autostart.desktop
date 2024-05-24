@@ -1,9 +1,10 @@
 [Desktop Entry]
 Name=jewels
-Comment=Jewels Inventory Desktop Client
+Comment=Jewels Inventory Desktop Client Collection
 Version=1.0
 Exec=jewels
 Icon=dev.imanuel.jewels
 Type=Application
 Terminal=false
 Categories=System;
+NoDisplay=true

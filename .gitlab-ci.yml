@@ -1,0 +1,58 @@
+.arch-linux:
+  image: library/archlinux:latest
+  before_script:
+    - pacman -Syu kde-development-environment-meta sudo base-devel kconfig kcoreaddons gcc-libs glib2 glibc kconfig kcoreaddons kcrash kdbusaddons ki18n kirigami kirigami-addons kwidgetsaddons qt6 --noconfirm
+
+stages:
+  - build
+  - package
+  - deploy
+
+build-arch-package:
+  stage: build
+  extends:
+    - .arch-linux
+  script:
+    - cmake . -B build
+    - cmake --build build
+    - cp build/bin/jewels jewels
+  artifacts:
+    paths:
+      - jewels
+      - dev.imanuel.jewels.desktop
+      - dev.imanuel.jewels.autostart.desktop
+      - dev.imanuel.jewels.svg
+
+makepkg-arch:
+  stage: package
+  extends:
+    - .arch-linux
+  script:
+    - useradd ci
+    - chown -R ci:ci ./jewels ./dev.imanuel.jewels.desktop ./dev.imanuel.jewels.autostart.desktop ./dev.imanuel.jewels.svg
+    - sudo -u ci makepkg
+  artifacts:
+    paths:
+      - jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}-x86_64.pkg.tar.zst
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+    - when: never
+
+deploy-arch-package:
+  stage: deploy
+  extends:
+    - .arch-linux
+  dependencies:
+    - makepkg-arch
+  script:
+    - git clone "https://ci:${CI_GIT_TOKEN}@gitlab.imanuel.dev/packages/arch.git"
+    - cp jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}-x86_64.pkg.tar.zst arch/
+    - cd arch
+    - repo-add ulbricht.db.tar.gz jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}-x86_64.pkg.tar.zst
+    - git commit -am "Added version ${CI_COMMIT_TAG}-${CI_PIPELINE_IID}"
+    - git push -o merge_request.create -o merge_request.target=main -o merge_request.merge_when_pipeline_succeeds "https://ci:${CI_GIT_TOKEN}@gitlab.imanuel.dev/packages/arch.git"
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: always
+    - when: never
