@@ -195,3 +195,24 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
+### ArchLinuxPackages template
+*.tar
+*.tar.*
+*.jar
+*.exe
+*.msi
+*.zip
+*.tgz
+*.log
+*.log.*
+*.sig
+
+pkg/
+src/
+
+### Flatpak template
+.flatpak-builder
+build
+build-dir
+repo
+

@@ -47,3 +47,8 @@ ki18n_install(po)
 feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES src/*.cpp src/*.h)
+
+if (UNIX)
+    install(FILES dev.imanuel.jewels.svg DESTINATION share/icons/hicolor/scalable/apps)
+#    install(FILES dev.imanuel.jewels.svg DESTINATION share/icons/hicolor/512x512/apps)
+endif()

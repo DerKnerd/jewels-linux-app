@@ -24,6 +24,6 @@ class Jewels : public QObject {
   QML_SINGLETON
 
 public:
-  auto sendData() -> QPromise<void> *;
+  Q_INVOKABLE QPromise<void> *sendData();
 };
 } // namespace jewels
