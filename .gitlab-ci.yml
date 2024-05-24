@@ -3,6 +3,7 @@
   tags:
     - runner-amd64
   before_script:
+    - useradd ci
     - pacman -Syu kde-development-environment-meta sudo base-devel kconfig kcoreaddons gcc-libs glib2 glibc kconfig kcoreaddons kcrash kdbusaddons ki18n kirigami kirigami-addons kwidgetsaddons qt6 --noconfirm
 
 stages:
