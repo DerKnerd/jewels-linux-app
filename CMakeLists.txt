@@ -21,6 +21,8 @@ include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(ECMSetupVersion)
 include(ECMFindQmlModule)
+include(ECMInstallIcons)
+include(ECMAddAppIcon)
 include(KDEGitCommitHooks)
 
 ecm_setup_version(${PROJECT_VERSION}
@@ -32,7 +34,7 @@ set(QT_EXTRA_COMPONENTS)
 list(APPEND QT_EXTRA_COMPONENTS Widgets)
 
 find_package(Qt6 ${QT6_MIN_VERSION} REQUIRED COMPONENTS Core Concurrent DBus Gui Qml QuickControls2 Svg ${QT_EXTRA_COMPONENTS})
-find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Config I18n)
+find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Config I18n IconThemes)
 
 qt_policy(SET QTP0001 NEW)
 
@@ -49,6 +51,7 @@ feature_summary(WHAT ALL INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAG
 file(GLOB_RECURSE ALL_CLANG_FORMAT_SOURCE_FILES src/*.cpp src/*.h)
 
 if (UNIX)
-    install(FILES dev.imanuel.jewels.svg DESTINATION share/icons/hicolor/scalable/apps)
-#    install(FILES dev.imanuel.jewels.svg DESTINATION share/icons/hicolor/512x512/apps)
+    ecm_install_icons(ICONS
+            sc-apps-jewels.svg
+            DESTINATION ${KDE_INSTALL_ICONDIR} THEME hicolor)
 endif()

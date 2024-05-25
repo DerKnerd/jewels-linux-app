@@ -5,6 +5,7 @@
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
 #include <QQuickStyle>
+#include <QQuickWindow>
 #include <QUrl>
 #include <QWindow>
 
@@ -66,16 +67,11 @@ auto main(int argc, char *argv[]) -> int {
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
     engine.load(QUrl(u"qrc:/main.qml"_s));
 
+    app.setWindowIcon(QIcon::fromTheme("jewels"));
+
     if (engine.rootObjects().isEmpty()) {
       return -1;
     }
-
-    if (engine.rootContext()->isWindowType()) {
-      auto *window = (QWindow *)engine.rootContext()->contextObject();
-      window->setIcon(QIcon(QPixmap(u":/icon.ico"_s)));
-    }
-
-    QApplication::setWindowIcon(QIcon(QPixmap(u":/icon.ico"_s)));
 
     return QApplication::exec();
   }

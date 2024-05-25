@@ -3,6 +3,7 @@ runtime: org.kde.Platform
 runtime-version: '6.7'
 sdk: org.kde.Sdk
 command: jewels
+rename-icon: jewels
 description: Jewels Inventory ist ein einfaches System zur Hardwareverwaltung
 finish-args:
   - --share=ipc
@@ -12,7 +13,7 @@ finish-args:
   - --device=dri
   - --filesystem=home
   - --filesystem=/sys
-  - --filesystem=host
+  - --filesystem=host-etc
 modules:
   - name: kirigamiaddons
     config-opts:
@@ -30,5 +31,3 @@ modules:
         path: '.'
         skip:
           - .git
-      - type: file
-        path: dev.imanuel.jewels.svg

@@ -95,16 +95,22 @@ auto Device::setRam() -> void {
 }
 
 auto Device::setOs() -> void {
-  QSettings osRelease(u"/etc/os-release"_s);
   os = new OperatingSystem();
-  os->name = osRelease.value("NAME").toString();
+  os->version = "Unbekannt";
 
-  auto osVersion = osRelease.value("VERSION");
-  auto osId = osRelease.value("ID");
-  if (!osVersion.isValid() || osVersion.isNull()) {
-    os->version = osVersion.toString();
-  } else if (osId.isValid() && osId.toString() == "arch") {
-    os->version = osRelease.value("BUILD_ID").toString();
+  auto osRelease = readFile("/etc/os-release");
+  auto splitOsRelease = osRelease.split("\n");
+  foreach (auto line, splitOsRelease) {
+    auto splitLine = line.split("=");
+    if (splitLine.length() == 2) {
+      const auto& key = splitLine.at(0);
+      auto value = splitLine.at(1);
+      if (key == "NAME") {
+        os->name = value.replace("\"", "");
+      } else if (key == "VERSION") {
+        os->version = value.replace("\"", "");
+      }
+    }
   }
 }
 

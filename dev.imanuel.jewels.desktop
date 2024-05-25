@@ -1,9 +1,9 @@
 [Desktop Entry]
-Name=jewels
+Name=Jewels
 Comment=Jewels Inventory Desktop Client
 Version=1.0
 Exec=jewels
-Icon=dev.imanuel.jewels
+Icon=jewels
 Type=Application
 Terminal=false
 Categories=System;

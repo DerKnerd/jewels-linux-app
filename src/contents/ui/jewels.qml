@@ -17,21 +17,10 @@ Kirigami.Page {
             visible: App.loggedIn
 
             onTriggered: {
-                Jewels.sendData().then(() => {
-                    sendResult.type = Kirigami.MessageType.Information;
-                    sendResult.visible = true;
-                    sendResult.text = "Die Daten von deinem Rechner wurden erfolgreich hochgeladen";
-                }, err => {
-                    sendResult.type = Kirigami.MessageType.Error;
-                    sendResult.visible = true;
-                    sendResult.text = "Die Daten konnten leider nicht gesendet werden";
-                    console.log(err);
-                }).catch(ex => {
-                    sendResult.type = Kirigami.MessageType.Error;
-                    sendResult.visible = true;
-                    sendResult.text = "Die Daten konnten leider nicht gesendet werden";
-                    console.log(err);
-                });
+                Jewels.sendData();
+                sendResult.type = Kirigami.MessageType.Information;
+                sendResult.visible = true;
+                sendResult.text = "Die Daten von deinem Rechner wurden erfolgreich hochgeladen";
             }
         },
         Kirigami.Action {
@@ -52,11 +41,8 @@ Kirigami.Page {
         Kirigami.InlineMessage {
             id: sendResult
 
-            Layout.fillWidth: true
-            Layout.leftMargin: 16
-            Layout.rightMargin: 16
-            Layout.topMargin: 16
             visible: false
+            width: jewelsPage.width
         }
         Kirigami.Heading {
             Layout.fillWidth: true

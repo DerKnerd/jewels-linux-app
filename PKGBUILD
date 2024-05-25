@@ -46,5 +46,5 @@ package() {
   install -Dm755 "${srcdir}/jewels" "${binDir}/jewels"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.desktop" "${desktopDir}/dev.imanuel.jewels.desktop"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.autostart.desktop" "${autostartDir}/dev.imanuel.jewels.autostart.desktop"
-  install -Dm644 "${srcdir}/dev.imanuel.jewels.svg" "${iconsDir}/dev.imanuel.jewels.svg"
+  install -Dm644 "${srcdir}/dev.imanuel.jewels.svg" "${iconsDir}/jewels.svg"
 }

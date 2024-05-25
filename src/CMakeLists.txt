@@ -27,6 +27,7 @@ target_link_libraries(jewels_static PUBLIC
         KF6::CoreAddons
         KF6::ConfigCore
         KF6::ConfigGui
+        KF6::IconThemes
 )
 
 target_include_directories(jewels_static PRIVATE ${CMAKE_BINARY_DIR})
@@ -35,8 +36,15 @@ target_link_libraries(jewels_static PUBLIC Qt::Widgets)
 
 kconfig_add_kcfg_files(jewels_static GENERATE_MOC jewelsconfig.kcfgc)
 
+set(icons_src)
+
+ecm_add_app_icon(icons_src ICONS
+        sc-apps-jewels.svg
+)
+
 # Target: main executable
 add_executable(jewels
+        ${icons_src}
         resources.qrc
         main.cpp
         app.cpp
