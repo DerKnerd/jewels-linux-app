@@ -6,7 +6,7 @@ source=(
     "jewels"
     "dev.imanuel.jewels.desktop"
     "dev.imanuel.jewels.autostart.desktop"
-    "dev.imanuel.jewels.svg"
+    "sc-apps-jewels.svg"
 )
 sha512sums=(
     "SKIP"
@@ -46,5 +46,6 @@ package() {
   install -Dm755 "${srcdir}/jewels" "${binDir}/jewels"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.desktop" "${desktopDir}/dev.imanuel.jewels.desktop"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.autostart.desktop" "${autostartDir}/dev.imanuel.jewels.autostart.desktop"
-  install -Dm644 "${srcdir}/dev.imanuel.jewels.svg" "${iconsDir}/jewels.svg"
+  install -Dm644 "${srcdir}/sc-apps-jewels.svg" "${iconsDir}/jewels.svg"
+  install -Dm644 "${srcdir}/sc-apps-jewels.svg" "${iconsDir}/dev.imanuel.jewels.svg"
 }
