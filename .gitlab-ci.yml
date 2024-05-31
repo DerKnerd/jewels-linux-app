@@ -47,12 +47,12 @@ deploy-arch-package:
     - git clone "https://ci:${CI_GIT_TOKEN}@gitlab.imanuel.dev/packages/arch.git"
     - cp jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}-x86_64.pkg.tar.zst arch/
     - cd arch
-    - git switch -c ${CI_COMMIT_TAG}-${CI_PIPELINE_IID}
+    - git switch -c jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}
     - repo-add ulbricht.db.tar.gz jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}-x86_64.pkg.tar.zst
     - git config --global user.email "jewels@ulbricht.cloud"
     - git config --global user.name "Jewly"
     - git commit -am "Added version ${CI_COMMIT_TAG}-${CI_PIPELINE_IID}"
-    - git push -o merge_request.create -o merge_request.target=main -o merge_request.merge_when_pipeline_succeeds "https://gitlab-ci-token:${CI_GIT_TOKEN}@gitlab.imanuel.dev/packages/arch.git"
+    - git push -o merge_request.create -o merge_request.target=main -o merge_request.merge_when_pipeline_succeeds origin jewels-${CI_COMMIT_TAG}-${CI_PIPELINE_IID}
   rules:
     - if: $CI_COMMIT_TAG
       when: always

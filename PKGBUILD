@@ -1,6 +1,6 @@
 pkgname="jewels"
-pkgver=${CI_COMMIT_TAG:-1.0.0}
-pkgrel=${CI_PIPELINE_IID:-1}
+pkgver=1.0.0
+pkgrel=2
 arch=("x86_64")
 source=(
     "jewels"
