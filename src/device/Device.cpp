@@ -19,6 +19,12 @@ float getClockSpeed() {
     return hz / 1000 / 1000;
   }
 
+  hz = readFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")
+           .toFloat(&ok);
+  if (ok) {
+    return hz / 1000 / 1000;
+  }
+
   return -1;
 }
 
@@ -103,7 +109,7 @@ auto Device::setOs() -> void {
   foreach (auto line, splitOsRelease) {
     auto splitLine = line.split("=");
     if (splitLine.length() == 2) {
-      const auto& key = splitLine.at(0);
+      const auto &key = splitLine.at(0);
       auto value = splitLine.at(1);
       if (key == "NAME") {
         os->name = value.replace("\"", "");
