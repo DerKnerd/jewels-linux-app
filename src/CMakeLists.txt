@@ -1,18 +1,28 @@
 set(CMAKE_AUTORCC ON)
 
-# Target: static library
-qt_add_qml_module(jewels_static
-        STATIC
-        URI dev.imanuel.jewels
-        VERSION 1.0
-        QML_FILES
-        contents/ui/main.qml
-)
-#
-#target_sources(jewels_static PRIVATE
-#        app.cpp
-#        Jewels.cpp
-#)
+find_package(CxxQt QUIET)
+
+if(NOT CxxQt_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+            CxxQt
+            GIT_REPOSITORY https://github.com/kdab/cxx-qt-cmake.git
+            GIT_TAG v0.7.0
+    )
+
+    FetchContent_MakeAvailable(CxxQt)
+endif()
+
+cxx_qt_import_crate(
+        MANIFEST_PATH detector-rs/Cargo.toml
+        CRATES detector_rs
+        QT_MODULES Qt::Core Qt::Gui Qt::Qml Qt::QuickControls2)
+
+cxx_qt_import_qml_module(jewels_detector_rs
+        URI "cloud.ulbricht.jewels"
+        SOURCE_CRATE detector_rs)
+
+add_library(jewels_static)
 
 target_link_libraries(jewels_static PUBLIC
         Qt6::Core
@@ -45,20 +55,13 @@ ecm_add_app_icon(icons_src ICONS
 # Target: main executable
 add_executable(jewels
         ${icons_src}
-        resources.qrc
-        main.cpp
-        app.cpp
-        Jewels.cpp
-        device/Bios.cpp
-        device/Mainboard.cpp
-        device/Kernel.cpp
-        device/OperatingSystem.cpp
-        device/Utils.cpp
-        device/Device.cpp
-        device/Drive.cpp
-        device/Cpu.cpp
+        qml/resources.qrc
+        jewels/main.cpp
+        jewels/app.cpp
 )
 
-target_link_libraries(jewels PRIVATE jewels_static jewels_staticplugin)
+target_link_libraries(jewels PRIVATE jewels_static jewels_detector_rs)
+
+qt_import_qml_plugins(jewels)
 
 install(TARGETS jewels ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

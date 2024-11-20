@@ -15,7 +15,7 @@
 #include <KLocalizedContext>
 #include <KLocalizedString>
 
-#include "Jewels.h"
+#include "detector_rs/src/qt.cxxqt.h"
 #include "jewelsconfig.h"
 
 using namespace Qt::Literals::StringLiterals;
@@ -26,9 +26,9 @@ auto main(int argc, char *argv[]) -> int {
   auto config = JewelsConfig::self();
   if (!config->isDefaults() &&
       QApplication::arguments().contains("--collect")) {
-    jewels::Jewels collector;
+    jewels::Sender sender;
+    sender.sendData(JewelsConfig::host(), JewelsConfig::token());
 
-    collector.sendData()->future().then([]() { QApplication::quit(); });
     return QApplication::exec();
   } else {
     // Default to org.kde.desktop style unless the user forces another style
@@ -56,22 +56,26 @@ auto main(int argc, char *argv[]) -> int {
                         i18nc("@info:credit", "Maintainer"), u"%{EMAIL}"_s,
                         u"https://imanuel.dev"_s);
     KAboutData::setApplicationData(aboutData);
-
     QQmlApplicationEngine engine;
-    qmlRegisterSingletonInstance("dev.imanuel.jewels", 1, 0, "Config", config);
-    qmlRegisterSingletonInstance("dev.imanuel.jewels", 1, 0, "App",
+
+    const QUrl url(
+        QStringLiteral("qrc:/qt/qml/cloud/ulbricht/jewels/qml/ui/main.qml"));
+    QObject::connect(
+        &engine, &QQmlApplicationEngine::objectCreated, &app,
+        [url](QObject *obj, const QUrl &objUrl) {
+          if (!obj && url == objUrl)
+            QCoreApplication::exit(-1);
+        },
+        Qt::QueuedConnection);
+    qmlRegisterSingletonInstance("cloud.ulbricht.jewels", 2, 0, "Config",
+                                 config);
+    qmlRegisterSingletonInstance("cloud.ulbricht.jewels", 2, 0, "App",
                                  new jewels::App());
-    qmlRegisterSingletonInstance("dev.imanuel.jewels", 1, 0, "Jewels",
-                                 new jewels::Jewels());
 
     engine.rootContext()->setContextObject(new KLocalizedContext(&engine));
-    engine.load(QUrl(u"qrc:/main.qml"_s));
+    engine.load(url);
 
     app.setWindowIcon(QIcon::fromTheme("jewels"));
-
-    if (engine.rootObjects().isEmpty()) {
-      return -1;
-    }
 
     return QApplication::exec();
   }

@@ -39,6 +39,7 @@ find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS Kirigami CoreAddons Conf
 qt_policy(SET QTP0001 NEW)
 
 ecm_find_qmlmodule(org.kde.kirigamiaddons.formcard 1.0)
+include_directories(include)
 
 add_subdirectory(src)
 
@@ -54,4 +55,4 @@ if (UNIX)
     ecm_install_icons(ICONS
             sc-apps-jewels.svg
             DESTINATION ${KDE_INSTALL_ICONDIR} THEME hicolor)
-endif()
+endif ()

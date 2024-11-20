@@ -1,8 +1,8 @@
 [Desktop Entry]
 Name=jewels
 Comment=Jewels Inventory Desktop Client Collection
-Version=1.0
-Exec=jewels
+Version=2.0
+Exec=jewels --collect
 Icon=dev.imanuel.jewels
 Type=Application
 Terminal=false

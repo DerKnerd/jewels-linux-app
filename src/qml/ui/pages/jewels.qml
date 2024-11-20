@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
-import dev.imanuel.jewels
+import cloud.ulbricht.jewels
 
 Kirigami.Page {
     id: jewelsPage
@@ -14,10 +14,10 @@ Kirigami.Page {
     actions: [
         Kirigami.Action {
             text: "Daten senden"
-            visible: App.loggedIn
+            visible: loggedIn
 
             onTriggered: {
-                Jewels.sendData();
+                Jewels.sendData(Config.host, Config.token);
                 sendResult.type = Kirigami.MessageType.Information;
                 sendResult.visible = true;
                 sendResult.text = "Die Daten von deinem Rechner wurden erfolgreich hochgeladen";
@@ -25,17 +25,18 @@ Kirigami.Page {
         },
         Kirigami.Action {
             text: "Abmelden"
-            visible: App.loggedIn
+            visible: loggedIn
 
             onTriggered: {
-                App.logout();
+                Config.host = "";
+                Config.token = "";
                 loginSheet.open();
             }
         }
     ]
 
     ColumnLayout {
-        visible: App.loggedIn
+        visible: loggedIn
         width: jewelsPage.width
 
         Kirigami.InlineMessage {
@@ -50,7 +51,7 @@ Kirigami.Page {
         }
         Controls.Label {
             Layout.fillWidth: true
-            text: `Du bist mit <b>${App.host}</b> verbunden`
+            text: `Du bist mit <b>${Config.host}</b> verbunden`
         }
     }
 }

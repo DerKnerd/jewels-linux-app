@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file alias="main.qml">ui/main.qml</file>
+        <file alias="pages/jewels.qml">ui/pages/jewels.qml</file>
+    </qresource>
+</RCC>

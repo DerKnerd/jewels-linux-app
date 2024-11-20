@@ -1,6 +1,6 @@
 pkgname="jewels"
-pkgver=1.0.0
-pkgrel=3
+pkgver=2.0.0
+pkgrel=1
 arch=("x86_64")
 source=(
     "jewels"

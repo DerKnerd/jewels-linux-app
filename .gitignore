@@ -208,7 +208,6 @@ _deps
 *.sig
 
 pkg/
-src/
 
 ### Flatpak template
 .flatpak-builder
