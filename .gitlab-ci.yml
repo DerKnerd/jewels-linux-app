@@ -11,7 +11,12 @@ stages:
   - package
   - deploy
 
+.base:
+  tags:
+    - runner-amd64
+
 .base-cargo:
+  extends: .base
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
   cache:
@@ -39,6 +44,7 @@ build:
       - jewels
 
 package:
+  extends: .base
   stage: package
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   variables:
@@ -58,6 +64,7 @@ package:
       - $UC_PACKAGED_FILE
 
 deploy:
+  extends: .base
   stage: package
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   variables:

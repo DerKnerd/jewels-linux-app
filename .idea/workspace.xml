@@ -11,9 +11,8 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3e2f309b-5fd2-4416-a1c7-4131319af39a" name="Changes" comment="JWLS-4 Fix the build">
+    <list default="true" id="3e2f309b-5fd2-4416-a1c7-4131319af39a" name="Changes" comment="JWLS-4 Package and then trigger">
       <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -155,7 +154,7 @@
       <updated>1743118019723</updated>
       <workItem from="1743118021834" duration="201000" />
       <workItem from="1743308898997" duration="23000" />
-      <workItem from="1754093759145" duration="24566000" />
+      <workItem from="1754093759145" duration="24805000" />
     </task>
     <task id="LOCAL-00001" summary="JWLS-4 Rebuild GUI part in Rust">
       <option name="closed" value="true" />
@@ -213,7 +212,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754177743086</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="JWLS-4 Package and then trigger">
+      <option name="closed" value="true" />
+      <created>1754177864260</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1754177864260</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -234,6 +241,7 @@
     <MESSAGE value="JWLS-4 Rebuild GUI part in Rust" />
     <MESSAGE value="JWLS-4 Add the collect command" />
     <MESSAGE value="JWLS-4 Fix the build" />
-    <option name="LAST_COMMIT_MESSAGE" value="JWLS-4 Fix the build" />
+    <MESSAGE value="JWLS-4 Package and then trigger" />
+    <option name="LAST_COMMIT_MESSAGE" value="JWLS-4 Package and then trigger" />
   </component>
 </project>
