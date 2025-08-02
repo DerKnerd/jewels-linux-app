@@ -11,53 +11,13 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3e2f309b-5fd2-4416-a1c7-4131319af39a" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/build.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/icons/jewels.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/models/config.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/models/jewels.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/models/mod.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/qt/app.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/qt/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.dockerignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.name" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/QtSettings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/jewels-desktop.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/material_theme_project_new.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/qmlSettings.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/LICENSE.txt" beforeDir="false" afterPath="$PROJECT_DIR$/LICENSE.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/PKGBUILD" beforeDir="false" afterPath="$PROJECT_DIR$/PKGBUILD" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/arch.dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev.imanuel.jewels.metainfo.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dev.imanuel.jewels.yaml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flatpak.dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/jewels-desktop.kdev4" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sc-apps-jewels.svg" beforeDir="false" afterPath="$PROJECT_DIR$/sc-apps-jewels.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CMakeLists.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/detector-rs/build.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/detector-rs/src/collector/detector.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/collector/detector.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/detector-rs/src/collector/mod.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/collector/mod.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/detector-rs/src/collector/sender.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/collector/sender.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/detector-rs/src/lib.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/detector-rs/src/native.rs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/jewels/app.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/jewels/app.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/jewels/main.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/jewelsconfig.kcfg" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/jewelsconfig.kcfgc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qml/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qml/resources.qrc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qml/ui/main.qml" beforeDir="false" afterPath="$PROJECT_DIR$/qml/ui/main.qml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/qml/ui/pages/jewels.qml" beforeDir="false" afterPath="$PROJECT_DIR$/qml/ui/pages/jewels.qml" afterDir="false" />
+    <list default="true" id="3e2f309b-5fd2-4416-a1c7-4131319af39a" name="Changes" comment="JWLS-4 Rebuild GUI part in Rust">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/collector/sender.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/collector/sender.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/models/jewels.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/models/jewels.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -139,8 +99,28 @@
       <recent name="$PROJECT_DIR$/src/detector-rs/src/qt" />
     </key>
   </component>
-  <component name="RunManager">
-    <configuration name="Run jewels" type="CargoCommandRunConfiguration" factoryName="Cargo Command" temporary="true">
+  <component name="RunManager" selected="Cargo.Run jewels collect">
+    <configuration name="Run jewels collect" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
+      <option name="buildProfileId" value="dev" />
+      <option name="command" value="run --package jewels --bin jewels -- collect" />
+      <option name="workingDirectory" value="file://$PROJECT_DIR$" />
+      <envs>
+        <env name="RUST_LOG" value="debug" />
+      </envs>
+      <option name="emulateTerminal" value="true" />
+      <option name="channel" value="DEFAULT" />
+      <option name="requiredFeatures" value="true" />
+      <option name="allFeatures" value="false" />
+      <option name="withSudo" value="false" />
+      <option name="buildTarget" value="REMOTE" />
+      <option name="backtrace" value="SHORT" />
+      <option name="isRedirectInput" value="false" />
+      <option name="redirectInputPath" value="" />
+      <method v="2">
+        <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Run jewels" type="CargoCommandRunConfiguration" factoryName="Cargo Command">
       <option name="buildProfileId" value="dev" />
       <option name="command" value="run --package jewels --bin jewels" />
       <option name="workingDirectory" value="file://$PROJECT_DIR$" />
@@ -160,11 +140,10 @@
         <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
       </method>
     </configuration>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Cargo.Run jewels" />
-      </list>
-    </recent_temporary>
+    <list>
+      <item itemvalue="Cargo.Run jewels" />
+      <item itemvalue="Cargo.Run jewels collect" />
+    </list>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="/usr/bin" />
@@ -179,8 +158,33 @@
       <updated>1743118019723</updated>
       <workItem from="1743118021834" duration="201000" />
       <workItem from="1743308898997" duration="23000" />
-      <workItem from="1754093759145" duration="23387000" />
+      <workItem from="1754093759145" duration="23953000" />
     </task>
+    <task id="LOCAL-00001" summary="JWLS-4 Rebuild GUI part in Rust">
+      <option name="closed" value="true" />
+      <created>1754176713048</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1754176713048</updated>
+    </task>
+    <task id="LOCAL-00002" summary="JWLS-4 Rebuild GUI part in Rust">
+      <option name="closed" value="true" />
+      <created>1754176718196</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1754176718196</updated>
+    </task>
+    <task id="LOCAL-00003" summary="JWLS-4 Rebuild GUI part in Rust">
+      <option name="closed" value="true" />
+      <created>1754176750601</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1754176750601</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -196,5 +200,9 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="JWLS-4 Rebuild GUI part in Rust" />
+    <option name="LAST_COMMIT_MESSAGE" value="JWLS-4 Rebuild GUI part in Rust" />
   </component>
 </project>

@@ -17,7 +17,7 @@ impl Jewels {
         Self::default()
     }
 
-    fn send_data(&self, host: QString, token: QString) {
+    pub fn send_data(&self, host: QString, token: QString) {
         let host = host.clone();
         let token = token.clone();
 
