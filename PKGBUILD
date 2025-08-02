@@ -1,7 +1,7 @@
 pkgname="jewels"
-pkgver=2.0.0
-pkgrel=1
 arch=("x86_64")
+pkgver="${CI_COMMIT_TAG:-0.0.0_alpha}"
+pkgrel=1
 source=(
     "jewels"
     "dev.imanuel.jewels.desktop"
@@ -15,19 +15,8 @@ sha512sums=(
     "SKIP"
 )
 depends=(
-    "kconfig"
-    "kcoreaddons"
-    "gcc-libs"
-    "glib2"
-    "glibc"
-    "kconfig"
-    "kcoreaddons"
-    "kcrash"
-    "kdbusaddons"
-    "ki18n"
     "kirigami"
     "kirigami-addons"
-    "kwidgetsaddons"
     "qt6-base"
     "qt6-declarative"
     "qt6-webview"
