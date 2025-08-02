@@ -38,25 +38,6 @@ build:
     paths:
       - jewels
 
-package-dev:
-  stage: package
-  image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
-  variables:
-    ARCH: amd64
-    UC_PACKAGED_FILE: jewels-$CI_COMMIT_TAG-$REL-x86_64.pkg.tar.zst
-    UC_TAG: $CI_COMMIT_TAG
-    REL: 1
-  script:
-    - cp $CI_PROJECT_DIR/PKGBUILD $HOME
-    - cp $CI_PROJECT_DIR/jewels $HOME
-    - cp $CI_PROJECT_DIR/sc-apps-jewels.svg $HOME
-    - cp $CI_PROJECT_DIR/dev.imanuel.jewels.desktop $HOME
-    - cp $CI_PROJECT_DIR/dev.imanuel.jewels.autostart.desktop $HOME
-    - makepkg
-  rules:
-    - if: $CI_COMMIT_TAG
-      when: never
-
 package:
   stage: package
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
@@ -72,8 +53,21 @@ package:
     - cp $CI_PROJECT_DIR/dev.imanuel.jewels.desktop $HOME
     - cp $CI_PROJECT_DIR/dev.imanuel.jewels.autostart.desktop $HOME
     - makepkg
+  artifacts:
+    paths:
+      - $UC_PACKAGED_FILE
+
+deploy:
+  stage: package
+  image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
+  variables:
+    ARCH: amd64
+    UC_PACKAGED_FILE: jewels-$CI_COMMIT_TAG-$REL-x86_64.pkg.tar.zst
+    UC_TAG: $CI_COMMIT_TAG
+    REL: 1
+  script:
     - git clone https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git
-    - cp $HOME/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
+    - cp $CI_PROJECT_DIR/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
     - cd arch
     - git config user.email $UC_BOT_EMAIL
     - git config user.name "Jewels"
@@ -86,12 +80,14 @@ package:
   rules:
     - if: $CI_COMMIT_TAG
 
-deploy-arch:
+trigger-repo:
   variables:
     UC_PACKAGED_FILE: jewels-$CI_COMMIT_TAG-$REL-x86_64.pkg.tar.zst
     UC_TAG: $CI_COMMIT_TAG
     REL: 1
   stage: deploy
+  needs:
+    - deploy
   trigger:
     project: packages/arch
     strategy: depend
