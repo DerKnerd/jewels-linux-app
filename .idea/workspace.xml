@@ -11,8 +11,9 @@
     </cargoProject>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3e2f309b-5fd2-4416-a1c7-4131319af39a" name="Changes" comment="JWLS-4 Add the collect command">
-      <change beforePath="$PROJECT_DIR$/src/qt/app.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/qt/app.rs" afterDir="false" />
+    <list default="true" id="3e2f309b-5fd2-4416-a1c7-4131319af39a" name="Changes" comment="JWLS-4 Fix the build">
+      <change beforePath="$PROJECT_DIR$/.gitlab-ci.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.gitlab-ci.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -154,7 +155,7 @@
       <updated>1743118019723</updated>
       <workItem from="1743118021834" duration="201000" />
       <workItem from="1743308898997" duration="23000" />
-      <workItem from="1754093759145" duration="24123000" />
+      <workItem from="1754093759145" duration="24459000" />
     </task>
     <task id="LOCAL-00001" summary="JWLS-4 Rebuild GUI part in Rust">
       <option name="closed" value="true" />
@@ -188,7 +189,23 @@
       <option name="project" value="LOCAL" />
       <updated>1754177397381</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="JWLS-4 Add the collect command">
+      <option name="closed" value="true" />
+      <created>1754177411632</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1754177411632</updated>
+    </task>
+    <task id="LOCAL-00006" summary="JWLS-4 Fix the build">
+      <option name="closed" value="true" />
+      <created>1754177633579</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1754177633579</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -208,6 +225,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="JWLS-4 Rebuild GUI part in Rust" />
     <MESSAGE value="JWLS-4 Add the collect command" />
-    <option name="LAST_COMMIT_MESSAGE" value="JWLS-4 Add the collect command" />
+    <MESSAGE value="JWLS-4 Fix the build" />
+    <option name="LAST_COMMIT_MESSAGE" value="JWLS-4 Fix the build" />
   </component>
 </project>
