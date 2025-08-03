@@ -58,6 +58,7 @@ package:
     - cp $CI_PROJECT_DIR/sc-apps-jewels.svg $HOME
     - cp $CI_PROJECT_DIR/dev.imanuel.jewels.desktop $HOME
     - cp $CI_PROJECT_DIR/dev.imanuel.jewels.autostart.desktop $HOME
+    - cd $HOME
     - makepkg
   artifacts:
     paths:
@@ -79,7 +80,7 @@ deploy:
     - git config user.email $UC_BOT_EMAIL
     - git config user.name "Jewels"
     - git add .
-    - git commit -m "Add new satellite version"
+    - git commit -m "Add new jewels version"
     - git push https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git main -o ci.skip
   artifacts:
     paths:
