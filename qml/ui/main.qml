@@ -3,6 +3,7 @@ import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.kirigamiaddons.formcard as FormCard
+
 import cloud.ulbricht.jewels
 
 Kirigami.ApplicationWindow {
@@ -10,36 +11,25 @@ Kirigami.ApplicationWindow {
 
     property bool loggedIn: Config.host && Config.token
 
-    minimumHeight: Kirigami.Units.gridUnit * 20
+    minimumHeight: Kirigami.Units.gridUnit * 10
     minimumWidth: Kirigami.Units.gridUnit * 20
-    pageStack.initialPage: Qt.resolvedUrl("/qt/qml/cloud/ulbricht/jewels/qml/ui/pages/jewels.qml")
+
+    height: Kirigami.Units.gridUnit * 10
+    width: Kirigami.Units.gridUnit * 20
+
+    pageStack.initialPage: Qt.resolvedUrl("/cloud/ulbricht/jewels/qml/ui/pages/jewels.qml")
     title: "Jewels"
 
     contextDrawer: Kirigami.ContextDrawer {
         id: contextDrawer
-
     }
 
-    Component.onCompleted: App.restoreWindowGeometry(root)
     onActiveChanged: {
         if (!loggedIn) {
             loginDialog.open();
         }
     }
 
-    onClosing: App.saveWindowGeometry(root)
-    onHeightChanged: saveWindowGeometryTimer.restart()
-    onWidthChanged: saveWindowGeometryTimer.restart()
-    onXChanged: saveWindowGeometryTimer.restart()
-    onYChanged: saveWindowGeometryTimer.restart()
-
-    Timer {
-        id: saveWindowGeometryTimer
-
-        interval: 1000
-
-        onTriggered: App.saveWindowGeometry(root)
-    }
     Kirigami.Dialog {
         id: loginDialog
 

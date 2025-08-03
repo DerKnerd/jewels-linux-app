@@ -4,13 +4,15 @@ use std::option::Option;
 mod detector;
 pub mod sender;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Drive {
     pub name: String,
+    pub manufacturer: String,
+    pub model: String,
     pub size: f64,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Cpu {
     pub manufacturer: String,
     pub model: String,
@@ -19,33 +21,33 @@ pub struct Cpu {
     pub threads: i32,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Bios {
     pub manufacturer: String,
     pub version: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Mainboard {
     pub manufacturer: String,
     pub version: String,
     pub model: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Kernel {
     pub version: String,
     pub architecture: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct OperatingSystem {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     pub name: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Device {
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
