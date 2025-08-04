@@ -1,3 +1,4 @@
+use crate::wireguard::update_wg_config;
 use clap::{Parser, Subcommand};
 use cstr::cstr;
 use models::config::Config;
@@ -8,6 +9,7 @@ use qmetaobject::qml_register_singleton_instance;
 pub mod collector;
 pub mod models;
 mod qt;
+mod wireguard;
 
 qrc!(pages,
     "cloud/ulbricht/jewels" {
@@ -27,6 +29,7 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     Collect,
+    Wireguard,
 }
 
 fn run_app() {
@@ -67,12 +70,14 @@ fn run_collection() {
     jewels.send_data(config.host, config.token)
 }
 
-fn main() -> std::io::Result<()> {
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
     env_logger::init();
     let cli = Cli::parse();
     match cli.command {
         None => run_app(),
         Some(Commands::Collect) => run_collection(),
+        Some(Commands::Wireguard) => update_wg_config().await,
     }
     Ok(())
 }

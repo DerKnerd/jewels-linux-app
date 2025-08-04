@@ -4,6 +4,7 @@ version = "2.0.0"
 edition = "2024"
 
 [dependencies]
+anyhow = "1"
 clap = { version = "4.5", features = ["derive"] }
 configparser = "3"
 cpp = "0.5"
@@ -19,8 +20,10 @@ reqwest = { version = "0.12", features = ["rustls-tls", "blocking", "json", "cha
 serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 sysinfo = { version = "0.36", features = ["serde"] }
+tokio = { version = "1", features = ["fs", "rt", "rt-multi-thread", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 xdg = "3"
+zbus_systemd = { version = "0.25701", features = ["systemd1"] }
 
 [build-dependencies]
 cpp_build = "0.5"

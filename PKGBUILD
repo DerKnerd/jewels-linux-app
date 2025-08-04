@@ -7,8 +7,10 @@ source=(
     "dev.imanuel.jewels.desktop"
     "dev.imanuel.jewels.autostart.desktop"
     "sc-apps-jewels.svg"
+    "jewels-wg-config.service"
 )
 sha512sums=(
+    "SKIP"
     "SKIP"
     "SKIP"
     "SKIP"
@@ -26,15 +28,23 @@ package() {
   binDir="${pkgdir}/usr/bin"
   desktopDir="${pkgdir}/usr/share/applications"
   autostartDir="${pkgdir}/etc/xdg/autostart"
+  systemdDir="${pkgdir}/usr/lib/systemd/system"
 
   mkdir -p "${iconsDir}"
   mkdir -p "${binDir}"
   mkdir -p "${desktopDir}"
   mkdir -p "${autostartDir}"
+  mkdir -p "${systemdDir}"
 
+  install -Dm644 ${srcdir}/jewels-wg-config.service ${systemdDir}/jewels-wg-config.service
   install -Dm755 "${srcdir}/jewels" "${binDir}/jewels"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.desktop" "${desktopDir}/dev.imanuel.jewels.desktop"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.autostart.desktop" "${autostartDir}/dev.imanuel.jewels.autostart.desktop"
   install -Dm644 "${srcdir}/sc-apps-jewels.svg" "${iconsDir}/jewels.svg"
   install -Dm644 "${srcdir}/sc-apps-jewels.svg" "${iconsDir}/dev.imanuel.jewels.svg"
+}
+
+post_install() {
+  systemctl daemon-reload
+  systemctl enable --now jewels-wg-config.service
 }
