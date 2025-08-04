@@ -58,7 +58,7 @@ package:
     - cp $CI_PROJECT_DIR/sc-apps-jewels.svg $HOME
     - cp $CI_PROJECT_DIR/dev.imanuel.jewels.desktop $HOME
     - cp $CI_PROJECT_DIR/dev.imanuel.jewels.autostart.desktop $HOME
-    - cp $CI_PROJECT_DIR/jewels-wg-config.service
+    - cp $CI_PROJECT_DIR/jewels-wg-config.service $HOME
     - cd $HOME
     - makepkg
   artifacts:
