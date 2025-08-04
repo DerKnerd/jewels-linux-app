@@ -53,12 +53,7 @@ package:
     UC_TAG: $CI_COMMIT_TAG
     REL: 1
   script:
-    - cp $CI_PROJECT_DIR/PKGBUILD $HOME
-    - cp $CI_PROJECT_DIR/jewels $HOME
-    - cp $CI_PROJECT_DIR/sc-apps-jewels.svg $HOME
-    - cp $CI_PROJECT_DIR/dev.imanuel.jewels.desktop $HOME
-    - cp $CI_PROJECT_DIR/dev.imanuel.jewels.autostart.desktop $HOME
-    - cp $CI_PROJECT_DIR/jewels-wg-config.service $HOME
+    - cp -r $CI_PROJECT_DIR/* $HOME
     - cd $HOME
     - makepkg
   artifacts:
