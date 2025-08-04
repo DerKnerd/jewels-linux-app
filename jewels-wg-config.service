@@ -1,0 +1,12 @@
+[Unit]
+Description=Download the wireguard config set in Jewels
+Requires=network-online.target network.target
+
+[Service]
+ExecStart=/usr/bin/jewels wireguard
+User=root
+Group=root
+Type=simple
+
+[Install]
+WantedBy=multi-user.target
