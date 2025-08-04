@@ -37,7 +37,7 @@ build:
   stage: build
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   script:
-    - cargo build --release
+    - cargo build --release --features systemd
     - cp target/release/jewels jewels
   artifacts:
     paths:

@@ -13,14 +13,19 @@ Kirigami.Page {
 
     actions: [
         Kirigami.Action {
+            text: "Updates installieren"
+            visible: loggedIn
+
+            onTriggered: {
+                Jewels.updateSystem();
+            }
+        },
+        Kirigami.Action {
             text: "Daten senden"
             visible: loggedIn
 
             onTriggered: {
                 Jewels.sendData(Config.host, Config.token);
-                sendResult.type = Kirigami.MessageType.Information;
-                sendResult.visible = true;
-                sendResult.text = "Die Daten von deinem Rechner wurden erfolgreich hochgeladen";
             }
         },
         Kirigami.Action {
@@ -39,12 +44,6 @@ Kirigami.Page {
         visible: loggedIn
         width: jewelsPage.width
 
-        Kirigami.InlineMessage {
-            id: sendResult
-
-            visible: false
-            width: jewelsPage.width
-        }
         Kirigami.Heading {
             Layout.fillWidth: true
             text: "Verbunden"
