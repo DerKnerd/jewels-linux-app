@@ -1,6 +1,7 @@
 use crate::models::config::Config;
 use machine_uid::machine_id::get_machine_id;
 use reqwest::Method;
+use std::path::PathBuf;
 use zbus_systemd::zbus;
 
 async fn get_wg_config() -> anyhow::Result<String> {
@@ -33,16 +34,37 @@ async fn restart_wg_quick() -> zbus::Result<()> {
             .build()
             .await?;
     systemctl
-        .restart_unit("wg-quick@vpn.service".to_string(), "replace".to_string())
+        .restart_unit(
+            format!("wg-quick@{}.service", get_wg_config_name().await),
+            "replace".to_string(),
+        )
         .await
         .map(|_| ())
+}
+
+async fn get_wg_config_name() -> String {
+    if tokio::fs::try_exists("/etc/wireguard/VPN.conf")
+        .await
+        .is_ok_and(|res| true)
+    {
+        "VPN"
+    } else {
+        "vpn"
+    }
+    .to_string()
 }
 
 pub async fn update_wg_config() {
     log::info!("Writing Wireguard config");
     let wg_conf = get_wg_config().await;
     let config_written = match wg_conf {
-        Ok(wg_conf) => tokio::fs::write("vpn.conf", wg_conf).await,
+        Ok(wg_conf) => {
+            tokio::fs::write(
+                format!("/etc/wireguard/{}.conf", get_wg_config_name().await),
+                wg_conf,
+            )
+            .await
+        }
         Err(err) => Err(std::io::Error::other(err)),
     };
     if let Err(err) = config_written {
