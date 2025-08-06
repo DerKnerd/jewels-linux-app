@@ -56,6 +56,7 @@ package:
     - cp -r $CI_PROJECT_DIR/* $HOME
     - cd $HOME
     - makepkg
+    - cp $HOME/$UC_PACKAGED_FILE $CI_PROJECT_DIR/$UC_PACKAGED_FILE
   artifacts:
     paths:
       - $UC_PACKAGED_FILE
