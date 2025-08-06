@@ -4,14 +4,17 @@ version = "2.0.0"
 edition = "2024"
 
 [dependencies]
+alpm = "4"
 anyhow = "1"
 clap = { version = "4.5", features = ["derive"] }
 configparser = "3"
 cpp = "0.5"
 cstr = "0.2"
 env_logger = "0.11"
+listenfd = "1"
 log = "0.4"
 machine-uid = "0.5"
+notify-rust = "4"
 num_cpus = "1"
 procfs = "0.17"
 qmetaobject = "0.2"
@@ -28,3 +31,6 @@ zbus_systemd = { version = "0.25701", features = ["systemd1"] }
 [build-dependencies]
 cpp_build = "0.5"
 semver = "1"
+
+[features]
+systemd = []

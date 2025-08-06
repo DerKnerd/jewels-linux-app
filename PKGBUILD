@@ -8,8 +8,12 @@ source=(
     "dev.imanuel.jewels.autostart.desktop"
     "sc-apps-jewels.svg"
     "jewels-wg-config.service"
+    "jewels-update.service"
+    "jewels-update.socket"
 )
 sha512sums=(
+    "SKIP"
+    "SKIP"
     "SKIP"
     "SKIP"
     "SKIP"
@@ -37,6 +41,8 @@ package() {
   mkdir -p "${systemdDir}"
 
   install -Dm644 ${srcdir}/jewels-wg-config.service ${systemdDir}/jewels-wg-config.service
+  install -Dm644 ${srcdir}/jewels-update.service ${systemdDir}/jewels-update.service
+  install -Dm644 ${srcdir}/jewels-update.socket ${systemdDir}/jewels-update.socket
   install -Dm755 "${srcdir}/jewels" "${binDir}/jewels"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.desktop" "${desktopDir}/dev.imanuel.jewels.desktop"
   install -Dm644 "${srcdir}/dev.imanuel.jewels.autostart.desktop" "${autostartDir}/dev.imanuel.jewels.autostart.desktop"
@@ -47,4 +53,5 @@ package() {
 post_install() {
   systemctl daemon-reload
   systemctl enable --now jewels-wg-config.service
+  systemctl enable --now jewels-update.socket
 }
