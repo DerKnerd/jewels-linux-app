@@ -17,6 +17,8 @@ sha512sums=(
     "SKIP"
     "SKIP"
     "SKIP"
+    "SKIP"
+    "SKIP"
 )
 depends=(
     "kirigami"
