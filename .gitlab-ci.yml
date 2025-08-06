@@ -73,6 +73,7 @@ deploy:
     UC_TAG: $CI_COMMIT_TAG
     REL: 1
   script:
+    - cd $HOME
     - git clone https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git
     - cp $CI_PROJECT_DIR/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
     - cd arch
