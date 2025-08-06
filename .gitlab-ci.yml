@@ -64,6 +64,8 @@ package:
 deploy:
   extends: .base
   stage: package
+  needs:
+    - package
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   variables:
     ARCH: amd64
