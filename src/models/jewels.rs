@@ -36,6 +36,11 @@ impl Jewels {
     }
 
     pub fn update_system(&self) {
+        let _ = Notification::new()
+            .summary("Updates werden installiert")
+            .body("Lehn dich zurück und lass Jewels die Arbeit machen, du bekommst eine Benachrichtigung, wenn alle Updates installiert sind.")
+            .icon("jewels")
+            .show();
         tokio::spawn(async move {
             match tokio::net::UnixStream::connect(
                 Path::new(UPDATE_SOCKET_DIR).join(UPDATE_SOCKET_FILE),
