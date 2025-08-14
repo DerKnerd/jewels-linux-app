@@ -1,7 +1,6 @@
 use crate::models::config::Config;
 use machine_uid::machine_id::get_machine_id;
 use reqwest::Method;
-use std::path::PathBuf;
 use zbus_systemd::zbus;
 
 async fn get_wg_config() -> anyhow::Result<String> {
@@ -45,7 +44,7 @@ async fn restart_wg_quick() -> zbus::Result<()> {
 async fn get_wg_config_name() -> String {
     if tokio::fs::try_exists("/etc/wireguard/VPN.conf")
         .await
-        .is_ok_and(|res| true)
+        .is_ok_and(|res| res)
     {
         "VPN"
     } else {
