@@ -36,23 +36,23 @@ fn get_repositories() -> Result<Vec<Repository>, anyhow::Error> {
                     urls: vec![server.to_string()],
                     sig_level,
                 });
-            } else if let Some(Some(include)) = keys.get("include") {
-                if std::fs::exists(include).is_ok_and(|res| res) {
-                    let include = std::fs::read_to_string(include)?;
-                    repositories.push(Repository {
-                        name: section.clone(),
-                        urls: include
-                            .lines()
-                            .filter(|line| line.starts_with("Server") && line.contains("://"))
-                            .map(|url| {
-                                url.trim_start_matches("Server = ")
-                                    .replace("$arch", "x86_64")
-                                    .replace("$repo", section.as_str())
-                            })
-                            .collect::<Vec<_>>(),
-                        sig_level: SigLevel::USE_DEFAULT,
-                    })
-                }
+            } else if let Some(Some(include)) = keys.get("include")
+                && std::fs::exists(include).is_ok_and(|res| res)
+            {
+                let include = std::fs::read_to_string(include)?;
+                repositories.push(Repository {
+                    name: section.clone(),
+                    urls: include
+                        .lines()
+                        .filter(|line| line.starts_with("Server") && line.contains("://"))
+                        .map(|url| {
+                            url.trim_start_matches("Server = ")
+                                .replace("$arch", "x86_64")
+                                .replace("$repo", section.as_str())
+                        })
+                        .collect::<Vec<_>>(),
+                    sig_level: SigLevel::USE_DEFAULT,
+                })
             }
         }
     }
