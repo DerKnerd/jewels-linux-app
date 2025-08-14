@@ -57,7 +57,7 @@ package:
     - cd $HOME
     - makepkg
     - git clone https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git
-    - cp $CI_PROJECT_DIR/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
+    - cp $HOME/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
     - cd arch
     - git config user.email $UC_BOT_EMAIL
     - git config user.name "Jewels"
