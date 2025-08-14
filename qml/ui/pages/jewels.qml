@@ -35,7 +35,8 @@ Kirigami.Page {
             onTriggered: {
                 Config.host = "";
                 Config.token = "";
-                loginSheet.open();
+                Config.save();
+                loginDialog.open();
             }
         }
     ]

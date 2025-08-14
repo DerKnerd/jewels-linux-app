@@ -14,8 +14,8 @@ Kirigami.ApplicationWindow {
     minimumHeight: Kirigami.Units.gridUnit * 10
     minimumWidth: Kirigami.Units.gridUnit * 20
 
-    height: Kirigami.Units.gridUnit * 10
-    width: Kirigami.Units.gridUnit * 20
+    height: Kirigami.Units.gridUnit * 20
+    width: Kirigami.Units.gridUnit * 30
 
     pageStack.initialPage: Qt.resolvedUrl("/cloud/ulbricht/jewels/qml/ui/pages/jewels.qml")
     title: "Jewels"
@@ -46,6 +46,7 @@ Kirigami.ApplicationWindow {
                 onTriggered: {
                     Config.host = loginUrl.text.replace('http://', '').replace('http://', '');
                     Config.token = loginToken.text;
+                    Config.save();
                     loginDialog.close();
                 }
             }
