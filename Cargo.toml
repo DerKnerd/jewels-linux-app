@@ -19,14 +19,14 @@ num_cpus = "1"
 procfs = "0.18"
 qmetaobject = "0.2"
 qttypes = { version = "0.2", features = [ "qtquick" ] }
-reqwest = { version = "0.12", features = ["rustls-tls", "blocking", "json", "charset", "http2"], default-features = false }
+reqwest = { version = "0.13", features = ["rustls-native-certs", "blocking", "json", "charset", "http2"], default-features = false }
 serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 sysinfo = { version = "0.37", features = ["serde"] }
 tokio = { version = "1", features = ["fs", "rt", "rt-multi-thread", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 xdg = "3"
-zbus_systemd = { version = "0.25800", features = ["systemd1"] }
+zbus_systemd = { version = "0.25900.0", features = ["systemd1"] }
 
 [build-dependencies]
 cpp_build = "0.5"
