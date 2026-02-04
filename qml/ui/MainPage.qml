@@ -5,6 +5,10 @@ import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
 
 Kirigami.ScrollablePage {
+    required property Login login
+
+    objectName: "MainPage"
+
     id: pageRoot
 
     implicitWidth: Kirigami.Units.gridUnit * 20
@@ -18,8 +22,18 @@ Kirigami.ScrollablePage {
     actions: [
         Kirigami.Action {
             text: "Abmelden"
-            visible: Login.loggedIn
-            onTriggered: Login.logout()
+            visible: login.loggedIn
+            onTriggered: {
+                login.logout()
+
+                const stack = applicationWindow().pageStack
+                const current = stack.currentItem
+
+                const onUpdatesPage = current && current.objectName === "UpdatesPage"
+                if (!onUpdatesPage && stack.depth > 1) {
+                    stack.replace(Qt.resolvedUrl("pages/LoginPage.qml"), { login: login })
+                }
+            }
         }
     ]
 
@@ -31,24 +45,36 @@ Kirigami.ScrollablePage {
         pagePool: mainPagePool
         basePage: pageRoot
         page: "/cloud/ulbricht/jewels/qml/ui/pages/LoginPage.qml"
+        initialProperties: ({
+            "login": login
+        })
     }
     Kirigami.PagePoolAction {
         id: updateAction
         pagePool: mainPagePool
         basePage: pageRoot
         page: "/cloud/ulbricht/jewels/qml/ui/pages/UpdatesPage.qml"
+        initialProperties: ({
+            "login": login
+        })
     }
     Kirigami.PagePoolAction {
         id: jewelsAction
         pagePool: mainPagePool
         basePage: pageRoot
         page: "/cloud/ulbricht/jewels/qml/ui/pages/JewelsPage.qml"
+        initialProperties: ({
+            "login": login
+        })
     }
     Kirigami.PagePoolAction {
         id: twoFactorAction
         pagePool: mainPagePool
         basePage: pageRoot
         page: "/cloud/ulbricht/jewels/qml/ui/pages/TwoFactorPage.qml"
+        initialProperties: ({
+            "login": login
+        })
     }
     background: Rectangle {
         anchors.fill: parent
@@ -88,7 +114,7 @@ Kirigami.ScrollablePage {
         spacing: 0
         ColumnLayout {
             JewelsDelegate {
-                visible: !Login.loggedIn && root.pageStack.wideMode
+                visible: !login.loggedIn && root.pageStack.wideMode
                 text: "Anmelden"
                 action: loginAction
             }
@@ -97,12 +123,12 @@ Kirigami.ScrollablePage {
                 action: updateAction
             }
             JewelsDelegate {
-                visible: Login.loggedIn && root.pageStack.wideMode
+                visible: login.loggedIn && root.pageStack.wideMode
                 text: "Jewels"
                 action: jewelsAction
             }
             JewelsDelegate {
-                visible: Login.loggedIn && root.pageStack.wideMode
+                visible: login.loggedIn && root.pageStack.wideMode
                 text: "Zwei Faktor Codes"
                 action: twoFactorAction
             }
@@ -115,7 +141,7 @@ Kirigami.ScrollablePage {
             Layout.rightMargin: Kirigami.Units.gridUnit
             JewelsCard {
                 action: loginAction
-                visible: !Login.loggedIn
+                visible: !login.loggedIn
                 title: "Anmelden"
                 info: "Hier kannst du dich bei Jewels anmelden um alle Features zu nutzen die den Server brauchen. Dazu zählt das automatische Inventar und auch der Zwei Faktor Dienst"
             }
@@ -126,13 +152,13 @@ Kirigami.ScrollablePage {
             }
             JewelsCard {
                 action: jewelsAction
-                visible: Login.loggedIn
+                visible: login.loggedIn
                 title: "Jewels"
                 info: "Hier kannst du dir alle deine Geräte anschauen, sei es dein Laptop oder ein Smartphone. Du bekommst Informationen zum Gerät und kannst auch schauen ob du bald ein neues brauchst."
             }
             JewelsCard {
                 action: jewelsAction
-                visible: Login.loggedIn
+                visible: login.loggedIn
                 title: "Zwei Faktor Codes"
                 info: "Du brauchst einen Zwei Faktor Code? Dann bist du hier genau richtig. Such einfach die entsprechende Website raus, kopier dir den Code und los gehts."
             }

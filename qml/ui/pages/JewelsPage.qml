@@ -5,12 +5,14 @@ import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
 
 Kirigami.ScrollablePage {
+    required property Login login
+
     title: "Jewels"
     id: jewelsPage
 
-    ColumnLayout {
-        anchors.fill: parent
-        spacing: Kirigami.Units.smallSpacing
+    GridLayout {
+        columns: 1
+        flow: GridLayout.TopToBottom
 
         Kirigami.Heading {
             Layout.fillWidth: true
@@ -18,7 +20,7 @@ Kirigami.ScrollablePage {
         }
         Controls.Label {
             Layout.fillWidth: true
-            text: "Du bist mit <b>" + Login.host + "</b> verbunden"
+            text: "Du bist mit <b>" + login.host + "</b> verbunden"
             textFormat: Text.RichText
         }
     }

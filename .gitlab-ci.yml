@@ -31,6 +31,7 @@ lint:
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   script:
     - cargo clippy --release
+    - qmllint qml/ui/**/*.qml
 
 build:
   extends: .base-cargo

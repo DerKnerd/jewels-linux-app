@@ -5,6 +5,8 @@ import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
 
 Kirigami.ScrollablePage {
+    required property Login login
+
     title: "Zwei Faktor Codes"
     id: twoFactorPage
 

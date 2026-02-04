@@ -6,9 +6,21 @@ import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
 
 Kirigami.ScrollablePage {
+    required property Login login
+
     title: "Anmelden"
     id: loginPage
     Layout.fillWidth: true
+
+    Connections {
+        target: login
+        function onLoginSuccessful() {
+            const stack = applicationWindow().pageStack
+            stack.replace(Qt.resolvedUrl("JewelsPage.qml"), {
+                login: login
+            })
+        }
+    }
 
     ColumnLayout {
         width: loginPage.width
@@ -23,10 +35,10 @@ Kirigami.ScrollablePage {
             actions: [
                 Kirigami.Action {
                     text: "Login starten"
-                    visible: !Login.loginInProgress
+                    visible: !login.loginInProgress
                     onTriggered: {
                         loginMessage.text = "Der Login wurde gestartet, bitte schau in deinem Browser nach."
-                        Login.triggerLogin()
+                        login.triggerLogin()
                     }
                 }
             ]
@@ -35,7 +47,7 @@ Kirigami.ScrollablePage {
         Controls.BusyIndicator {
             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
             id: loginBusyIndicator
-            visible: Login.loginInProgress
+            visible: login.loginInProgress
         }
     }
 }

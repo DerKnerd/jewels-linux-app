@@ -1,5 +1,3 @@
-pragma ComponentBehavior: Bound
-
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
@@ -9,6 +7,10 @@ import cloud.ulbricht.jewels
 
 Kirigami.ApplicationWindow {
     id: root
+
+    Login {
+        id: login
+    }
 
     minimumHeight: Kirigami.Units.gridUnit * 15
     minimumWidth: Kirigami.Units.gridUnit * 15
@@ -22,6 +24,8 @@ Kirigami.ApplicationWindow {
 
     Component {
         id: mainPageComponent
-        MainPage {}
+        MainPage {
+            login: login
+        }
     }
 }

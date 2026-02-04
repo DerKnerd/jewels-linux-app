@@ -4,7 +4,9 @@ import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
 
-Kirigami.Page {
+Kirigami.ScrollablePage {
+    objectName: "UpdatesPage"
+
     id: updatesPage
 
     Layout.fillHeight: true
@@ -14,7 +16,6 @@ Kirigami.Page {
     actions: [
         Kirigami.Action {
             text: "Updates installieren"
-            visible: loggedIn
 
             onTriggered: {
                 Updates.updateSystem();

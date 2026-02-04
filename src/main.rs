@@ -3,7 +3,6 @@ use clap::{Parser, Subcommand};
 use cstr::cstr;
 use models::jewels::Jewels;
 use qmetaobject::prelude::*;
-use qmetaobject::qml_register_singleton_instance;
 use crate::commands::collection::run_collection;
 use crate::commands::updater::run_package_update;
 use crate::models::login::Login;
@@ -16,6 +15,7 @@ pub mod collector;
 pub mod models;
 mod qt;
 mod commands;
+mod authentication;
 
 qrc!(pages,
     "cloud/ulbricht/jewels" {
@@ -49,21 +49,17 @@ fn run_app() {
 
     qt::app::set_desktop_file("dev.imanuel.jewels");
 
-    let login = Login::new();
-
-    qml_register_singleton_instance(
+    qml_register_type::<Jewels>(
         cstr!("cloud.ulbricht.jewels"),
         1,
         0,
         cstr!("Jewels"),
-        Jewels::new(),
     );
-    qml_register_singleton_instance(
+    qml_register_type::<Login>(
         cstr!("cloud.ulbricht.jewels"),
         1,
         0,
         cstr!("Login"),
-        login,
     );
 
     let mut engine = QmlEngine::new();
