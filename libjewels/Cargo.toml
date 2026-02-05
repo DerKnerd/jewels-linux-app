@@ -19,3 +19,4 @@ tokio = { workspace = true }
 uuid = { workspace = true }
 xdg = { workspace = true }
 zbus = { workspace = true }
+zbus_systemd = { workspace = true }

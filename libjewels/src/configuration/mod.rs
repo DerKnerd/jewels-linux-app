@@ -1,9 +1,10 @@
 use configparser::ini::Ini;
 use serde::{Deserialize, Serialize};
+use zbus::zvariant::Type;
 
 const CONFIG_FILE_NAME: &str = "jewelsrc";
 
-#[derive(Debug, Default, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Ord, PartialOrd, Eq, PartialEq, Serialize, Deserialize, Type)]
 pub struct JewelsConfiguration {
     pub host: String,
     pub token: String,
