@@ -2,7 +2,7 @@
 Name=Jewels
 Comment=Jewels Inventory Desktop Client
 Version=2.0.0
-Exec=jewels
+Exec=jewels-desktop
 Icon=jewels
 Type=Application
 Terminal=false

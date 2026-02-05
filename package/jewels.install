@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+post_install() {
+  systemctl daemon-reload
+  systemctl enable --now jewelsd.service
+}
+
+post_upgrade() {
+  systemctl daemon-reload
+}

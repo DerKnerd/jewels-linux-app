@@ -1,0 +1,25 @@
+[Unit]
+Description=Jewels system daemon
+Documentation=man:jewelsd(8)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Tell systemd that this service owns a D-Bus name and is considered 'started'
+# once it acquires it.
+Type=dbus
+BusName=cloud.ulbricht.Jewels1
+
+# Your compiled daemon
+ExecStart=/usr/bin/jewelsd
+
+# It’s a root/system service
+User=root
+Group=root
+
+# Restart on crash; change as desired
+Restart=on-failure
+
+[Install]
+# Start at boot; optional – you can rely on on-demand activation only
+WantedBy=multi-user.target
