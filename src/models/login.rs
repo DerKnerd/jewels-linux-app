@@ -1,7 +1,7 @@
+use crate::commands::collection::run_collection;
 use crate::models::config::{JewelsConfiguration, load_config, write_config};
 use qmetaobject::{QObject, QPointer, qt_base_class, qt_method, qt_property, qt_signal};
 use qttypes::QString;
-use crate::commands::collection::run_collection;
 
 #[allow(non_snake_case)]
 #[derive(QObject)]
@@ -66,7 +66,7 @@ impl Login {
         let qptr = QPointer::from(&*self);
         let reload_configuration = qmetaobject::queued_callback(move |()| {
             let config = load_config();
-            qptr.as_pinned().map(|this| {
+            if let Some(this) = qptr.as_pinned() {
                 this.borrow_mut().loggedIn = !config.host.is_empty();
                 this.borrow_mut().loginInProgress = false;
                 this.borrow_mut().host = config.host.into();
@@ -76,7 +76,7 @@ impl Login {
                 this.borrow().loggedInChanged();
                 this.borrow().loginInProgressChanged();
                 this.borrow().loginSuccessful();
-            });
+            }
             tokio::spawn(async move {
                 run_collection().await;
             });
