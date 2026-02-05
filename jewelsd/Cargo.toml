@@ -1,0 +1,8 @@
+[package]
+name = "jewelsd"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+env_logger = { workspace = true }
+tokio = { workspace = true }

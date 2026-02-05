@@ -1,5 +1,4 @@
-use crate::commands::collection::run_collection;
-use crate::models::config::{JewelsConfiguration, load_config, write_config};
+use libjewels::configuration::{JewelsConfiguration, load_config, write_config};
 use qmetaobject::{QObject, QPointer, qt_base_class, qt_method, qt_property, qt_signal};
 use qttypes::QString;
 
@@ -78,7 +77,11 @@ impl Login {
                 this.borrow().loginSuccessful();
             }
             tokio::spawn(async move {
-                run_collection().await;
+                if libjewels::collector::send_device_data().await.is_err() {
+                    log::error!("Error sending device data");
+                    tokio::time::sleep(std::time::Duration::from_mins(5)).await;
+                    let _ = libjewels::collector::send_device_data().await;
+                }
             });
         });
         tokio::spawn(async move {

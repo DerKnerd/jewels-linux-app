@@ -1,4 +1,4 @@
-use crate::models::config::{JewelsConfiguration, write_config};
+use libjewels::configuration::{JewelsConfiguration, write_config};
 use warp::Filter;
 
 async fn handle_login(

@@ -1,21 +1,11 @@
-use commands::wireguard::update_wg_config;
-use clap::{Parser, Subcommand};
 use cstr::cstr;
-use models::jewels::Jewels;
 use qmetaobject::prelude::*;
-use crate::commands::collection::run_collection;
-use crate::commands::updater::run_package_update;
+use crate::models::jewels::Jewels;
 use crate::models::login::Login;
 
-pub const UPDATE_SOCKET_DIR: &str = "/tmp/jewels/";
-pub const UPDATE_SOCKET_FILE: &str = "update.sock";
-
-mod alpm;
-pub mod collector;
+pub mod qt;
 pub mod models;
-mod qt;
-mod commands;
-mod authentication;
+pub mod authentication;
 
 qrc!(pages,
     "cloud/ulbricht/jewels" {
@@ -27,20 +17,6 @@ qrc!(pages,
         "icons/jewels.svg"
     }
 );
-
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Collect,
-    Update,
-    Wireguard,
-}
 
 fn run_app() {
     qmetaobject::log::init_qt_to_rust();
@@ -69,14 +45,8 @@ fn run_app() {
 }
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+pub async  fn jewels_desktop() -> std::io::Result<()> {
     env_logger::init();
-    let cli = Cli::parse();
-    match cli.command {
-        None => run_app(),
-        Some(Commands::Collect) => run_collection().await,
-        Some(Commands::Update) => run_package_update().await,
-        Some(Commands::Wireguard) => update_wg_config().await,
-    }
+    run_app();
     Ok(())
 }

@@ -2,7 +2,10 @@ use serde::Serialize;
 use std::option::Option;
 
 mod detector;
-pub mod sender;
+mod sender;
+
+pub use detector::collect_device_info;
+pub use sender::send_device_data;
 
 #[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Drive {

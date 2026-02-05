@@ -1,11 +1,35 @@
 [package]
 name = "jewels"
+
+[package.version]
+workspace = true
+
+[package.edition]
+workspace = true
+
+[[bin]]
+name = "jewelsd"
+path = "src/bin/jewelsd.rs"
+
+[[bin]]
+name = "jewels-desktop"
+path = "src/bin/jewels-desktop.rs"
+
+[workspace.package]
 version = "2.0.1"
 edition = "2024"
 
-[dependencies]
+[workspace]
+members = [
+    "jewelsd",
+    "jewels-desktop",
+    "libjewels"
+]
+
+[workspace.dependencies]
 alpm = "5"
 anyhow = "1"
+cpp_build = "0.5"
 clap = { version = "4.5", features = ["derive"] }
 configparser = "3"
 cpp = "0.5"
@@ -21,18 +45,22 @@ procfs = "0.18"
 qmetaobject = "0.2"
 qttypes = { version = "0.2", features = ["qtquick"] }
 reqwest = { version = "0.13", features = ["rustls-native-certs", "blocking", "json", "charset", "http2"], default-features = false }
+semver = "1"
 serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 sysinfo = { version = "0.38", features = ["serde"] }
-tokio = { version = "1", features = ["fs", "rt", "net","sync", "rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["fs", "rt", "net", "sync", "rt-multi-thread", "macros"] }
 uuid = { version = "1", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
 xdg = "3"
+zbus = { version = "5", features = ["tokio"] }
 zbus_systemd = { version = "0.25900.0", features = ["systemd1"] }
 
-[build-dependencies]
-cpp_build = "0.5"
-semver = "1"
+[dependencies]
+jewels-desktop = { path = "jewels-desktop" }
+jewelsd = { path = "jewelsd" }
+
+tokio = { workspace = true }
 
 [features]
 systemd = []

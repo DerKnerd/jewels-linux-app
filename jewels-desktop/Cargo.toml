@@ -1,0 +1,23 @@
+[package]
+name = "jewels-desktop"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+cpp = { workspace = true }
+cstr = { workspace = true }
+env_logger = { workspace = true }
+libjewels = { path = "../libjewels" }
+log = { workspace = true }
+notify-rust = { workspace = true }
+open = { workspace = true }
+qmetaobject = { workspace = true }
+qttypes = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+warp = { workspace = true }
+zbus = { workspace = true }
+
+[build-dependencies]
+cpp_build = { workspace = true }
+semver = { workspace = true }
