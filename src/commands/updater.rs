@@ -1,5 +1,4 @@
 use tokio::io::AsyncWriteExt;
-use crate::{UPDATE_SOCKET_DIR, UPDATE_SOCKET_FILE};
 use tokio::net::UnixListener;
 
 #[cfg(feature = "systemd")]
@@ -20,6 +19,7 @@ async fn get_listener() -> std::io::Result<UnixListener> {
 async fn get_listener() -> std::io::Result<UnixListener> {
     use std::fs::Permissions;
     use std::os::unix::fs::PermissionsExt;
+    use crate::{UPDATE_SOCKET_DIR, UPDATE_SOCKET_FILE};
 
     tokio::fs::create_dir_all(UPDATE_SOCKET_DIR).await?;
     let path = std::path::Path::new(UPDATE_SOCKET_DIR).join(UPDATE_SOCKET_FILE);
