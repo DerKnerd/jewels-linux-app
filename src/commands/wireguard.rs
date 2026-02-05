@@ -1,16 +1,17 @@
-use crate::models::config::Config;
+use crate::models::config::load_config;
 use machine_uid::machine_id::get_machine_id;
 use reqwest::Method;
 use zbus_systemd::zbus;
 
 async fn get_wg_config() -> anyhow::Result<String> {
-    let config = Config::new();
+    let config = load_config();
     let client = reqwest::Client::new();
     let url = format!(
         "{}/api/relay-vpn/device/{}",
         config.host,
         get_machine_id().unwrap()
     );
+
     log::info!("Downloading Wireguard config from  {url}");
     let req = client
         .request(Method::GET, url)
