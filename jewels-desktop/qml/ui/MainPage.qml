@@ -54,9 +54,6 @@ Kirigami.ScrollablePage {
         pagePool: mainPagePool
         basePage: pageRoot
         page: "/cloud/ulbricht/jewels/qml/ui/pages/UpdatesPage.qml"
-        initialProperties: ({
-            "login": login
-        })
     }
     Kirigami.PagePoolAction {
         id: jewelsAction
@@ -93,7 +90,7 @@ Kirigami.ScrollablePage {
             text: title
             level: 2
         }
-        contentItem: Controls.Label
+        contentItem: Text
         {
             wrapMode: Text.WordWrap
             text: info

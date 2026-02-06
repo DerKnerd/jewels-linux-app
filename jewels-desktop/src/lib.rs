@@ -1,9 +1,8 @@
-use crate::models::jewels::Jewels;
-use crate::models::login::Login;
 use cstr::cstr;
 use libjewels::configuration::load_config;
 use libjewels::dbus::{WireguardProxy, get_bus};
 use qmetaobject::prelude::*;
+use crate::models::{Jewels, Login,  Updates};
 
 pub mod authentication;
 pub mod models;
@@ -29,6 +28,7 @@ fn run_app() {
 
     qml_register_type::<Jewels>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Jewels"));
     qml_register_type::<Login>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Login"));
+    qml_register_type::<Updates>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Updates"));
 
     let mut engine = QmlEngine::new();
     engine.load_file("qrc:/cloud/ulbricht/jewels/qml/ui/MainApp.qml".into());

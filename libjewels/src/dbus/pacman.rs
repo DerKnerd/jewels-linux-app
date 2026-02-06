@@ -4,6 +4,7 @@ use zbus::Connection;
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
 
+#[derive(Debug, Clone)]
 pub struct Pacman {
     conn: Arc<Connection>,
 }
@@ -32,6 +33,8 @@ impl Pacman {
         let (download_tx, mut download_rx) = tokio::sync::mpsc::channel(16);
         let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel(16);
         let (log_tx, mut log_rx) = tokio::sync::mpsc::channel(16);
+        let (done_tx, mut done_rx) = tokio::sync::mpsc::channel(16);
+
         let path = hdr.path().unwrap();
         let emitter = SignalEmitter::new(&conn, path.to_string())?;
         let alpm_helper = AlpmHelper::new(download_tx, progress_tx, log_tx);
@@ -47,14 +50,18 @@ impl Pacman {
                     Some(msg) = download_rx.recv() => {
                         let _ = Pacman::download(&emitter, msg).await;
                     }
+                    Some(_) = done_rx.recv() => {}
                     else => break
                 }
             }
         });
 
-        alpm_helper
+        let res = alpm_helper
             .get_available_updates()
-            .map_err(|err| zbus::fdo::Error::Failed(err.to_string()))
+            .map_err(|err| zbus::fdo::Error::Failed(err.to_string()));
+        let _ = done_tx.send(()).await;
+
+        res
     }
 
     pub fn install_updates(&self, #[zbus(header)] hdr: Header<'_>) -> zbus::fdo::Result<()> {
@@ -62,6 +69,7 @@ impl Pacman {
         let (download_tx, mut download_rx) = tokio::sync::mpsc::channel(16);
         let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel(16);
         let (log_tx, mut log_rx) = tokio::sync::mpsc::channel(16);
+        let (done_tx, mut done_rx) = tokio::sync::mpsc::channel(16);
 
         let path = hdr.path().unwrap();
         let emitter = SignalEmitter::new(&conn, path.to_string())?;
@@ -78,14 +86,26 @@ impl Pacman {
                     Some(msg) = download_rx.recv() => {
                         let _ = Pacman::download(&emitter, msg).await;
                     }
+                    Some(_) = done_rx.recv() => {
+                        break;
+                    }
                     else => break
                 }
             }
         });
 
-        alpm_helper
-            .update_system()
-            .map_err(|err| zbus::fdo::Error::Failed(err.to_string()))
+        let emitter = SignalEmitter::new(&conn, path.to_string())?;
+        tokio::spawn(async move {
+            if let Err(err) = alpm_helper.update_system() {
+                log::error!("Failed to update the packages {err}");
+                let _ = Pacman::failure(&emitter).await;
+            } else {
+                log::info!("Successfully updated the system");
+                let _ = Pacman::finished(&emitter).await;
+            }
+            let _ = done_tx.send(()).await;
+        });
+        Ok(())
     }
 
     #[zbus(signal)]
@@ -104,8 +124,8 @@ impl Pacman {
     ) -> zbus::Result<()>;
 
     #[zbus(signal)]
-    pub async fn packages(
-        signal_emitter: &SignalEmitter<'_>,
-        packages: Vec<String>,
-    ) -> zbus::Result<()>;
+    pub async fn finished(signal_emitter: &SignalEmitter<'_>) -> zbus::Result<()>;
+
+    #[zbus(signal)]
+    pub async fn failure(signal_emitter: &SignalEmitter<'_>) -> zbus::Result<()>;
 }

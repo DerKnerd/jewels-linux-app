@@ -227,7 +227,7 @@ impl AlpmHelper {
         {
             let self_ref = self_ref.clone();
             handle.set_log_cb(callback.clone(), move |level, msg, _ctx| {
-                self_ref.log_callback(level.clone(), msg.to_string())
+                self_ref.log_callback(level, msg.to_string())
             });
         }
         {
@@ -248,10 +248,10 @@ impl AlpmHelper {
         {
             let self_ref = self_ref.clone();
             handle.set_dl_cb(callback.clone(), move |filename, download_event, _ctx| {
-                self_ref.download_callback(filename.to_string(), download_event.event().clone())
+                self_ref.download_callback(filename.to_string(), download_event.event())
             });
         }
-        handle.set_parallel_downloads(8);
+        handle.set_parallel_downloads(4);
 
         Ok((handle, callback))
     }

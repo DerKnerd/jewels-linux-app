@@ -1,12 +1,7 @@
 use crate::configuration::JewelsConfiguration;
 
+#[derive(Debug, Default, Clone)]
 pub struct Wireguard {}
-
-impl Wireguard {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 #[zbus::interface(
     name = "cloud.ulbricht.jewels.Wireguard",

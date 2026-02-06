@@ -66,15 +66,16 @@ impl Login {
         let reload_configuration = qmetaobject::queued_callback(move |()| {
             let config = load_config();
             if let Some(this) = qptr.as_pinned() {
-                this.borrow_mut().loggedIn = !config.host.is_empty();
-                this.borrow_mut().loginInProgress = false;
-                this.borrow_mut().host = config.host.into();
-                this.borrow_mut().token = config.token.into();
-                this.borrow().host_changed();
-                this.borrow().token_changed();
-                this.borrow().loggedInChanged();
-                this.borrow().loginInProgressChanged();
-                this.borrow().loginSuccessful();
+                let mut jewels_config = this.borrow_mut();
+                jewels_config.loggedIn = !config.host.is_empty();
+                jewels_config.loginInProgress = false;
+                jewels_config.host = config.host.into();
+                jewels_config.token = config.token.into();
+                jewels_config.host_changed();
+                jewels_config.token_changed();
+                jewels_config.loggedInChanged();
+                jewels_config.loginInProgressChanged();
+                jewels_config.loginSuccessful();
             }
             tokio::spawn(async move {
                 if libjewels::collector::send_device_data().await.is_err() {

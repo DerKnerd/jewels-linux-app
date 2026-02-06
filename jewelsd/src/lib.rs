@@ -12,7 +12,7 @@ pub async fn start_jewelsd() -> std::io::Result<()> {
         .map_err(std::io::Error::other)?
         .serve_at(
             "/cloud/ulbricht/jewels/Wireguard",
-            Wireguard::new(),
+            Wireguard::default(),
         )
         .map_err(std::io::Error::other)?
         .serve_at(

@@ -18,7 +18,7 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             text: "Verbunden"
         }
-        Controls.Label {
+        Text {
             Layout.fillWidth: true
             text: "Du bist mit <b>" + login.host + "</b> verbunden"
             textFormat: Text.RichText
