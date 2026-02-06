@@ -8,7 +8,7 @@ Wants=network-online.target
 # Tell systemd that this service owns a D-Bus name and is considered 'started'
 # once it acquires it.
 Type=dbus
-BusName=cloud.ulbricht.Jewels1
+BusName=cloud.ulbricht.jewels.JewelsKit
 
 # Your compiled daemon
 ExecStart=/usr/bin/jewelsd

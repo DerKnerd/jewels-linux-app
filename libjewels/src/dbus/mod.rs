@@ -1,4 +1,7 @@
+mod pacman;
 mod wireguard;
+
+pub use pacman::*;
 
 pub use wireguard::*;
 

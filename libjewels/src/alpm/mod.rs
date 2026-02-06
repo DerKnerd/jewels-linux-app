@@ -61,7 +61,7 @@ fn get_repositories() -> Result<Vec<Repository>, anyhow::Error> {
 }
 
 pub(crate) fn get_alpm_handle() -> Result<Alpm, anyhow::Error> {
-    let mut handle = Alpm::new("/", "/var/lib/pacman/")?;
+    let mut handle = Alpm::new("/", "/var/lib/pacman")?;
     handle.add_cachedir("/var/lib/pacman/cache")?;
 
     for repo in get_repositories()? {

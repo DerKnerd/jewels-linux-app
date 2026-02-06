@@ -11,7 +11,7 @@ impl Wireguard {
 #[zbus::interface(
     name = "cloud.ulbricht.jewels.Wireguard",
     proxy(
-        default_service = "cloud.ulbricht.jewels.Wireguard",
+        default_service = "cloud.ulbricht.jewels.JewelsKit",
         default_path = "/cloud/ulbricht/jewels/Wireguard",
     )
 )]
