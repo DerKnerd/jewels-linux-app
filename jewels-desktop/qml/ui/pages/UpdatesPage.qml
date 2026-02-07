@@ -11,7 +11,7 @@ Kirigami.Page {
 
     Updates {
         id: updates
-        // Component.onCompleted: updates.refreshCache()
+        Component.onCompleted: updates.refreshCache()
         onUpdateFinishedChanged: updates.refreshCache()
     }
 
@@ -56,13 +56,14 @@ Kirigami.Page {
             id: noUpdatesMessage
             Layout.fillWidth: true
             text: "Super, dein Rechner ist aktuell. Es gibt nichts zu tun."
-            visible: updates.updateCount === 0 && !updates.refreshing
+            visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
             type: Kirigami.MessageType.Positive
 
             actions: [
                 Kirigami.Action {
                     text: "Such nochmal"
-                    onTriggered: updates.refreshCache()
+                    // onTriggered: updates.refreshCache()
+                    onTriggered: updates.updateSystem()
                 }
             ]
         }
@@ -71,7 +72,7 @@ Kirigami.Page {
             Layout.alignment: Qt.AlignTop
             id: refreshFailedMessage
             Layout.fillWidth: true
-            visible: updates.refreshingFailed
+            visible: updates.refreshingFailed && !updates.refreshing
             type: Kirigami.MessageType.Error
             text: "Leider konnten die neuesten Updates nicht abgerufen werden. " +
                 "Du kannst es jederzeit erneut versuchen."
@@ -101,18 +102,17 @@ Kirigami.Page {
             Controls.ProgressBar {
                 Layout.fillWidth: true
                 from: 0
-                to: 100
-                value: updates.downloadStatus1.percent
+                to: updates.downloadStatus1.total
+                value: updates.downloadStatus1.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
             Text {
                 Layout.alignment: Qt.AlignRight
-                text: `${updates.downloadStatus1.percent.toFixed(2)} %`
+                text: `${updates.downloadStatus1.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
             Text {
-                Layout.bottomMargin: Kirigami.Units.mediumSpacing
                 Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
                 elide: Text.ElideRight
@@ -122,13 +122,13 @@ Kirigami.Page {
             Controls.ProgressBar {
                 Layout.fillWidth: true
                 from: 0
-                to: 100
-                value: updates.downloadStatus2.percent
+                to: updates.downloadStatus2.total
+                value: updates.downloadStatus2.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
             Text {
                 Layout.alignment: Qt.AlignRight
-                text: `${updates.downloadStatus2.percent.toFixed(2)} %`
+                text: `${updates.downloadStatus2.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
@@ -142,13 +142,13 @@ Kirigami.Page {
             Controls.ProgressBar {
                 Layout.fillWidth: true
                 from: 0
-                to: 100
-                value: updates.downloadStatus3.percent
+                to: updates.downloadStatus3.total
+                value: updates.downloadStatus3.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
             Text {
                 Layout.alignment: Qt.AlignRight
-                text: `${updates.downloadStatus3.percent.toFixed(2)} %`
+                text: `${updates.downloadStatus3.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
@@ -162,25 +162,19 @@ Kirigami.Page {
             Controls.ProgressBar {
                 Layout.fillWidth: true
                 from: 0
-                to: 100
-                value: updates.downloadStatus4.percent
+                to: updates.downloadStatus4.total
+                value: updates.downloadStatus4.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
             Text {
                 Layout.alignment: Qt.AlignRight
-                text: `${updates.downloadStatus4.percent.toFixed(2)} %`
+                text: `${updates.downloadStatus4.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
-            Text {
-                Layout.minimumWidth: 150
-                Layout.maximumWidth: 150
-                elide: Text.ElideRight
-                text: updates.installPackage
-                visible: updates.updateInProgress && updates.downloadFinished
-            }
             Controls.ProgressBar {
                 Layout.fillWidth: true
+                Layout.columnSpan: 2
                 from: 0
                 to: updates.installHowMany
                 value: updates.installCurrent

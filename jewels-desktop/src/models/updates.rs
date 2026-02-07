@@ -1,5 +1,6 @@
 use libjewels::alpm::{DownloadProgress, UpdatablePackage, UpdateProgress};
 use libjewels::dbus::{PacmanProxy, get_bus};
+use notify_rust::{Hint, Notification, Timeout, Urgency};
 use qmetaobject::{
     QObject, QPointer, SimpleListItem, SimpleListModel, qt_base_class, qt_method, qt_property,
     qt_signal,
@@ -22,8 +23,25 @@ pub struct DownloadStatus {
     base: qt_base_class!(trait QObject),
     name: qt_property!(QString; NOTIFY nameChanged),
     percent: qt_property!(f64; NOTIFY percentChanged),
+    total: qt_property!(f64; NOTIFY totalChanged),
+    current: qt_property!(f64; NOTIFY currentChanged),
     nameChanged: qt_signal!(),
     percentChanged: qt_signal!(),
+    totalChanged: qt_signal!(),
+    currentChanged: qt_signal!(),
+}
+
+impl DownloadStatus {
+    pub fn reset(&mut self) {
+        self.name = QString::default();
+        self.percent = 0f64;
+        self.total = 0f64;
+        self.current = 0f64;
+        self.nameChanged();
+        self.percentChanged();
+        self.totalChanged();
+        self.currentChanged();
+    }
 }
 
 impl From<UpdatablePackage> for Package {
@@ -125,29 +143,42 @@ impl Updates {
                 let mut updates_ref = this.borrow_mut();
                 match updates {
                     UpdateStatus::Download(progress) => {
+                        updates_ref.downloadFinished = false;
                         let download_statuses = [
                             &updates_ref.downloadStatus1,
                             &updates_ref.downloadStatus2,
                             &updates_ref.downloadStatus3,
                             &updates_ref.downloadStatus4,
                         ];
+                        let percent = (progress.status as f64 / progress.total as f64) * 100f64;
                         let active_download = download_statuses
                             .iter()
                             .find(|status| status.borrow().name.to_string() == progress.filename);
                         let first_full_download = download_statuses
                             .iter()
-                            .find(|status| status.borrow().percent == 100f64);
+                            .find(|status| status.borrow().total == status.borrow().current);
                         if let Some(download) = active_download {
-                            download.borrow_mut().percent =
-                                (progress.status / progress.total) as f64 * 100f64;
-                            download.borrow().percentChanged();
+                            let mut download_ref = download.borrow_mut();
+                            if download_ref.current < progress.status as f64 {
+                                download_ref.percent = percent;
+                                download_ref.total = progress.total as f64;
+                                download_ref.current = progress.status as f64;
+                                download_ref.totalChanged();
+                                download_ref.currentChanged();
+                                download_ref.percentChanged();
+                            }
                         } else if let Some(download) = first_full_download {
-                            download.borrow_mut().percent =
-                                (progress.status / progress.total) as f64 * 100f64;
-                            download.borrow_mut().name = progress.filename.into();
-                            download.borrow().percentChanged();
-                            download.borrow().nameChanged();
+                            let mut download_ref = download.borrow_mut();
+                            download_ref.percent = percent;
+                            download_ref.total = progress.total as f64;
+                            download_ref.current = progress.status as f64;
+                            download_ref.name = progress.filename.into();
+                            download_ref.totalChanged();
+                            download_ref.currentChanged();
+                            download_ref.percentChanged();
+                            download_ref.nameChanged();
                         }
+                        updates_ref.downloadFinishedChanged();
                     }
                     UpdateStatus::Update(progress) => {
                         updates_ref.downloadFinished = true;
@@ -155,6 +186,10 @@ impl Updates {
                         updates_ref.installPercent = progress.percent;
                         updates_ref.installHowMany = progress.howmany;
                         updates_ref.installCurrent = progress.current;
+                        updates_ref.downloadStatus1.borrow_mut().reset();
+                        updates_ref.downloadStatus2.borrow_mut().reset();
+                        updates_ref.downloadStatus3.borrow_mut().reset();
+                        updates_ref.downloadStatus4.borrow_mut().reset();
                         updates_ref.downloadFinishedChanged();
                         updates_ref.installPackageChanged();
                         updates_ref.installPercentChanged();
@@ -163,16 +198,25 @@ impl Updates {
                     }
                     UpdateStatus::Complete => {
                         updates_ref.updateFinished = true;
+                        updates_ref.updateInProgress = false;
+                        updates_ref.downloadStatus1.borrow_mut().reset();
+                        updates_ref.downloadStatus2.borrow_mut().reset();
+                        updates_ref.downloadStatus3.borrow_mut().reset();
+                        updates_ref.downloadStatus4.borrow_mut().reset();
+                        updates_ref.updateInProgressChanged();
                         updates_ref.updateFinishedChanged();
                     }
                     UpdateStatus::Error => {
                         updates_ref.updateFailed = true;
+                        updates_ref.updateInProgress = false;
+                        updates_ref.downloadStatus1.borrow_mut().reset();
+                        updates_ref.downloadStatus2.borrow_mut().reset();
+                        updates_ref.downloadStatus3.borrow_mut().reset();
+                        updates_ref.downloadStatus4.borrow_mut().reset();
+                        updates_ref.updateInProgressChanged();
                         updates_ref.updateFinishedChanged();
                     }
                 }
-
-                updates_ref.updateInProgress = false;
-                updates_ref.updateInProgressChanged();
             }
         });
         tokio::spawn(async move {
@@ -226,10 +270,26 @@ impl Updates {
                     },
                     Some(_) = finished.next() => {
                         refresh_status(UpdateStatus::Complete);
+                            let _ = Notification::new()
+                            .summary("Dein Rechner ist aktuell")
+                            .body("Super, die Updates wurden erfolgreich installiert und dein Rechner ist jetzt auf dem neuesten Stand.")
+                            .appname("jewels")
+                            .icon("jewels")
+                            .show_async()
+                            .await;
                         break;
                     }
                     Some(_) = failure.next() => {
                         refresh_status(UpdateStatus::Error);
+                        let _ = Notification::new()
+                            .summary("Fehler beim Updaten")
+                            .body("Die Updates haben leider nicht geklappt. Du kannst es noch einmal versuchen, wenn das auch nicht hilft, wende dich an den Support.")
+                            .appname("jewels")
+                            .urgency(Urgency::Critical)
+                            .icon("jewels")
+                            .hint(Hint::Resident(true))
+                            .timeout(Timeout::Never)
+                            .show();
                         break;
                     }
                     else => break
@@ -255,9 +315,11 @@ impl Updates {
                     let mut updates_ref = this.borrow_mut();
                     if let Some(updates) = updates {
                         updates_ref.updateCount = updates.len() as i32;
+                        updates_ref.refreshingFailed = false;
                         let mut model = updates_ref.updatablePackages.borrow_mut();
                         model.reset_data(updates.into_iter().map(Package::from).collect());
                         updates_ref.updateCountChanged();
+                        updates_ref.refreshingFailedChanged();
                     } else {
                         updates_ref.refreshingFailed = true;
                         updates_ref.refreshingFailedChanged();

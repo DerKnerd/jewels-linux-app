@@ -1,4 +1,4 @@
-use libjewels::dbus::{Pacman, Wireguard, get_builder, get_bus};
+use libjewels::dbus::{Pacman, Wireguard, get_builder};
 use std::future::pending;
 
 pub async fn start_jewelsd() -> std::io::Result<()> {
@@ -17,7 +17,7 @@ pub async fn start_jewelsd() -> std::io::Result<()> {
         .map_err(std::io::Error::other)?
         .serve_at(
             "/cloud/ulbricht/jewels/Pacman",
-            Pacman::new(get_bus().await.map_err(std::io::Error::other)?),
+            Pacman::default(),
         )
         .map_err(std::io::Error::other)?
         .build()

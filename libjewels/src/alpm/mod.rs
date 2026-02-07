@@ -4,6 +4,7 @@ pub use packages::*;
 
 use alpm::{Alpm, SigLevel, Usage};
 use configparser::ini::Ini;
+use sysinfo::System;
 
 struct Repository {
     name: String,
@@ -78,4 +79,36 @@ pub(crate) fn get_alpm_handle() -> Result<Alpm, anyhow::Error> {
     }
 
     Ok(handle)
+}
+
+pub(crate) fn clear_stale_pacman_lock() -> anyhow::Result<()> {
+    let lock_path = "/var/lib/pacman/db.lck";
+
+    if !std::path::Path::new(lock_path).exists() {
+        return Ok(());
+    }
+
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    for process in sys.processes().values() {
+        let name = process
+            .name()
+            .to_str()
+            .map(|name| name.to_lowercase())
+            .unwrap_or_default();
+        if name == "pacman"
+            || name == "pamac"
+            || name == "yay"
+            || name == "paru"
+            || name == "trizen"
+        {
+            anyhow::bail!("Database locked by active process: {}", name);
+        }
+    }
+
+    log::warn!("Removing stale pacman lock file!");
+    std::fs::remove_file(lock_path)?;
+
+    Ok(())
 }

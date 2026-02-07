@@ -10,10 +10,12 @@ workspace = true
 [[bin]]
 name = "jewelsd"
 path = "src/bin/jewelsd.rs"
+required-features = ["jewelsd"]
 
 [[bin]]
 name = "jewels-desktop"
 path = "src/bin/jewels-desktop.rs"
+required-features = ["jewels-desktop"]
 
 [workspace.package]
 version = "2.0.1"
@@ -30,12 +32,10 @@ members = [
 alpm = "5"
 anyhow = "1"
 cpp_build = "0.5"
-clap = { version = "4.5", features = ["derive"] }
 configparser = "3"
 cpp = "0.5"
 cstr = "0.2"
 env_logger = "0.11"
-listenfd = "1"
 log = "0.4"
 machine-uid = "0.5"
 notify-rust = "4"
@@ -49,7 +49,7 @@ semver = "1"
 serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 sysinfo = { version = "0.38", features = ["serde"] }
-tokio = { version = "1", features = ["fs", "rt", "net", "sync", "rt-multi-thread", "macros"] }
+tokio = { version = "1", features = ["full"] }
 uuid = { version = "1", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
 xdg = "3"
@@ -57,10 +57,12 @@ zbus = { version = "5", features = ["tokio"] }
 zbus_systemd = { version = "0.25900.0", features = ["systemd1"] }
 
 [dependencies]
-jewels-desktop = { path = "jewels-desktop" }
-jewelsd = { path = "jewelsd" }
+jewels-desktop = { path = "jewels-desktop", optional = true }
+jewelsd = { path = "jewelsd", optional = true }
 
 tokio = { workspace = true }
 
 [features]
 systemd = []
+jewelsd = ["dep:jewelsd"]
+jewels-desktop = ["dep:jewels-desktop"]

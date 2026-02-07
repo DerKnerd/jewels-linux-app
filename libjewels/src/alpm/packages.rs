@@ -1,4 +1,4 @@
-use crate::alpm::get_alpm_handle;
+use crate::alpm::{clear_stale_pacman_lock, get_alpm_handle};
 use alpm::{Alpm, DownloadEvent, DownloadResult, LogLevel, Question, TransFlag};
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
@@ -98,8 +98,8 @@ impl AlpmHelper {
         });
     }
 
-    fn progress_callback(&self, name: String, percent: i32, n: usize, total: usize) {
-        log::info!("{name} {percent}% ({total}/{n})");
+    fn progress_callback(&self, name: String, percent: i32, total: usize, n: usize) {
+        log::info!("{name} {percent}% ({n}/{total})");
         let sender = self.update_progress_sender.clone();
         tokio::spawn(async move {
             if let Err(err) = sender
@@ -253,6 +253,8 @@ impl AlpmHelper {
         }
         handle.set_parallel_downloads(4);
 
+        clear_stale_pacman_lock()?;
+
         Ok((handle, callback))
     }
 
@@ -296,12 +298,10 @@ impl AlpmHelper {
         let result = handle
             .trans_add()
             .iter()
-            .map(|pkg| {
-                UpdatablePackage {
-                    name: pkg.name().to_string(),
-                    new_version: pkg.version().to_string(),
-                    description: pkg.desc().unwrap_or("").to_string(),
-                }
+            .map(|pkg| UpdatablePackage {
+                name: pkg.name().to_string(),
+                new_version: pkg.version().to_string(),
+                description: pkg.desc().unwrap_or("").to_string(),
             })
             .collect();
 

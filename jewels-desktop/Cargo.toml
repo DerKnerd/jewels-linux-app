@@ -13,7 +13,6 @@ notify-rust = { workspace = true }
 open = { workspace = true }
 qmetaobject = { workspace = true }
 qttypes = { workspace = true }
-serde = { workspace = true }
 tokio = { workspace = true }
 warp = { workspace = true }
 zbus = { workspace = true }
