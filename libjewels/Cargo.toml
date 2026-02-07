@@ -1,0 +1,22 @@
+[package]
+name = "libjewels"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+alpm = { workspace = true }
+anyhow = { workspace = true }
+configparser = { workspace = true }
+log = { workspace = true }
+machine-uid = { workspace = true }
+num_cpus = { workspace = true }
+procfs = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+smbios-lib = { workspace = true }
+sysinfo = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+xdg = { workspace = true }
+zbus = { workspace = true }
+zbus_systemd = { workspace = true }

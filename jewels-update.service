@@ -1,6 +1,0 @@
-[Unit]
-Description=The Jewels client update handler
-
-[Service]
-ExecStart=/usr/bin/jewels update
-Environment=RUST_LOG=info

@@ -1,9 +1,0 @@
-[Unit]
-Description=The Jewels client update handler
-
-[Socket]
-ListenStream=/tmp/jewels/update.sock
-Service=jewels-update.service
-
-[Install]
-WantedBy=network.target
