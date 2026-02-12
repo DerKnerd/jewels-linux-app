@@ -5,8 +5,9 @@ use qmetaobject::{
     QObject, QPointer, SimpleListItem, SimpleListModel, qt_base_class, qt_method, qt_property,
     qt_signal,
 };
-use qttypes::{QByteArray, QString, QStringList, QVariant};
+use qttypes::{QByteArray, QString, QStringList, QVariant, QVariantList, QVariantMap};
 use std::cell::RefCell;
+use std::collections::BTreeMap;
 
 fn get_icon_source(
     brand_icon_similarity: f64,
@@ -226,9 +227,10 @@ pub struct OneTimePasswords {
     base: qt_base_class!(trait QObject),
 
     loadingChanged: qt_signal!(),
+    sharedOneTimePasswordsChanged: qt_signal!(),
 
     pub myOneTimePasswords: qt_property!(RefCell<SimpleListModel<OneTimePassword>>; CONST),
-    pub sharedOneTimePasswords: qt_property!(RefCell<SimpleListModel<SharedOneTimePassword>>; CONST),
+    pub sharedOneTimePasswords: qt_property!(QVariantList; NOTIFY sharedOneTimePasswordsChanged),
 
     pub loading: qt_property!(bool; NOTIFY loadingChanged),
 
@@ -255,7 +257,66 @@ pub struct OneTimePasswords {
 }
 
 impl OneTimePasswords {
-    pub fn load_one_time_password(&mut self) {
+    fn get_shared_otps_as_map(shared_otp: Vec<otp::SharedOneTimePassword>) -> QVariantList {
+        // Replace this with however you access the selected/shared OTP list in Rust:
+        let otps = shared_otp.as_slice();
+
+        // BTreeMap keeps groups sorted by name; use HashMap if you don't care about order.
+        let mut groups = BTreeMap::<String, Vec<&otp::SharedOneTimePassword>>::new();
+
+        for otp in otps {
+            let key = otp.shared_by.name.clone(); // group key: sharedByName
+            groups.entry(key).or_default().push(otp);
+        }
+
+        let mut out = QVariantList::default();
+
+        for (name, entries) in groups {
+            let mut otp_list = QVariantList::default();
+
+            for otp in entries {
+                let mut otp_map = QVariantMap::default();
+                otp_map.insert("id".into(), QVariant::from(otp.id));
+                otp_map.insert(
+                    "accountName".into(),
+                    QString::from(otp.account_name.clone()).into(),
+                );
+                otp_map.insert(
+                    "accountIssuer".into(),
+                    QString::from(otp.account_issuer.clone()).into(),
+                );
+                otp_map
+                    .insert("secretKey".into(), QString::from(otp.secret_key.clone()).into());
+                otp_map.insert("canEdit".into(), QVariant::from(otp.can_edit));
+                otp_map.insert(
+                    "iconSource".into(),
+                    QVariant::from(get_icon_source(
+                        otp.brand_icon_similarity,
+                        otp.simple_icon_similarity,
+                        otp.brand_icon.clone(),
+                        otp.simple_icon.clone(),
+                    ))
+                        .clone(),
+                );
+                otp_map.insert(
+                    "sharedByName".into(),
+                    QString::from(otp.shared_by.name.clone()).into(),
+                );
+
+                otp_list.push(QVariant::from(otp_map));
+            }
+
+            let mut group_map = QVariantMap::default();
+            group_map.insert("name".into(), QString::from(name).into());
+            group_map.insert("otpCodes".into(), QVariant::from(otp_list));
+
+            out.push(QVariant::from(group_map));
+        }
+
+        out
+    }
+
+    fn load_one_time_password(&mut self) {
         self.loading = true;
         self.loadingChanged();
 
@@ -269,10 +330,11 @@ impl OneTimePasswords {
                     let mut otps_ref = this.borrow_mut();
                     otps_ref.loading = false;
                     otps_ref.loadingChanged();
+                    let groups = Self::get_shared_otps_as_map(shared_otp);
+                    otps_ref.sharedOneTimePasswords = groups;
+                    otps_ref.sharedOneTimePasswordsChanged();
                     let mut my_otps = otps_ref.myOneTimePasswords.borrow_mut();
                     my_otps.reset_data(my_otp.into_iter().map(Into::into).collect());
-                    let mut shared_otps = otps_ref.sharedOneTimePasswords.borrow_mut();
-                    shared_otps.reset_data(shared_otp.into_iter().map(Into::into).collect());
                 }
             },
         );
@@ -283,7 +345,7 @@ impl OneTimePasswords {
         });
     }
 
-    pub fn share_otp(&mut self, otp_id: i64, shared_with_emails: QStringList) {
+    fn share_otp(&mut self, otp_id: i64, shared_with_emails: QStringList) {
         let qptr = QPointer::from(&*self);
         let set_otp = qmetaobject::queued_callback(
             move |(my_otp, shared_otp): (
@@ -296,8 +358,6 @@ impl OneTimePasswords {
                     otps_ref.loadingChanged();
                     let mut my_otps = otps_ref.myOneTimePasswords.borrow_mut();
                     my_otps.reset_data(my_otp.into_iter().map(Into::into).collect());
-                    let mut shared_otps = otps_ref.sharedOneTimePasswords.borrow_mut();
-                    shared_otps.reset_data(shared_otp.into_iter().map(Into::into).collect());
                 }
             },
         );
@@ -323,45 +383,38 @@ impl OneTimePasswords {
         });
     }
 
-    pub fn edit_otp(&mut self, otp_id: i64, account_name: QString) {
+    fn edit_otp(&mut self, otp_id: i64, account_name: QString) {
         let qptr = QPointer::from(&*self);
         let set_otp = qmetaobject::queued_callback(
-            move |(my_otp, shared_otp): (
-                Vec<otp::OneTimePassword>,
-                Vec<otp::SharedOneTimePassword>,
-            )| {
+            move |my_otp: Vec<otp::OneTimePassword>| {
                 if let Some(this) = qptr.as_pinned() {
                     let otps_ref = this.borrow_mut();
                     let mut my_otps = otps_ref.myOneTimePasswords.borrow_mut();
                     my_otps.reset_data(my_otp.into_iter().map(Into::into).collect());
-                    let mut shared_otps = otps_ref.sharedOneTimePasswords.borrow_mut();
-                    shared_otps.reset_data(shared_otp.into_iter().map(Into::into).collect());
                 }
             },
         );
 
         tokio::spawn(async move {
-            if otp::update_one_time_password(otp_id, account_name.into()).await.is_ok() {
+            if otp::update_one_time_password(otp_id, account_name.into())
+                .await
+                .is_ok()
+            {
                 if let Ok(otps) = otp::get_one_time_passwords().await {
-                    set_otp((otps.my_one_time_passwords, otps.shared_one_time_passwords));
+                    set_otp(otps.my_one_time_passwords);
                 }
             }
         });
     }
 
-    pub fn delete_otp(&mut self, otp_id: i64) {
+    fn delete_otp(&mut self, otp_id: i64) {
         let qptr = QPointer::from(&*self);
         let set_otp = qmetaobject::queued_callback(
-            move |(my_otp, shared_otp): (
-                Vec<otp::OneTimePassword>,
-                Vec<otp::SharedOneTimePassword>,
-            )| {
+            move |my_otp: Vec<otp::OneTimePassword>| {
                 if let Some(this) = qptr.as_pinned() {
                     let otps_ref = this.borrow_mut();
                     let mut my_otps = otps_ref.myOneTimePasswords.borrow_mut();
                     my_otps.reset_data(my_otp.into_iter().map(Into::into).collect());
-                    let mut shared_otps = otps_ref.sharedOneTimePasswords.borrow_mut();
-                    shared_otps.reset_data(shared_otp.into_iter().map(Into::into).collect());
                 }
             },
         );
@@ -369,7 +422,7 @@ impl OneTimePasswords {
         tokio::spawn(async move {
             if otp::delete_one_time_password(otp_id).await.is_ok() {
                 if let Ok(otps) = otp::get_one_time_passwords().await {
-                    set_otp((otps.my_one_time_passwords, otps.shared_one_time_passwords));
+                    set_otp(otps.my_one_time_passwords);
                 }
             }
         });

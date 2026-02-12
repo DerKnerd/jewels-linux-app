@@ -86,6 +86,59 @@ Kirigami.ScrollablePage {
                 }
             }
         }
+
+        Repeater {
+            model: oneTimePasswords.sharedOneTimePasswords
+
+            delegate: ColumnLayout {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+
+                required property var modelData
+
+                spacing: Kirigami.Units.largeSpacing
+
+                Kirigami.Heading {
+                    text: `Geteilt von ${modelData.name}`
+                    level: 1
+                }
+
+                Flow {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: Kirigami.Units.largeSpacing
+
+                    Repeater {
+                        model: modelData.otpCodes
+
+                        delegate: Item {
+                            property var rOtpId: modelData.otpId
+                            property var rAccountName: modelData.accountName
+                            property var rAccountIssuer: modelData.accountIssuer
+                            property var rSecretKey: modelData.secretKey
+                            property var rCanEdit: modelData.canEdit
+                            property var rIconSource: modelData.iconSource
+
+                            width: card.width
+                            height: card.height
+
+                            TotpCard {
+                                id: card
+
+                                host: login.host
+                                sharedWithEmails: parent.rSharedWithEmails
+                                otpId: parent.rOtpId
+                                accountName: parent.rAccountName
+                                accountIssuer: parent.rAccountIssuer
+                                secretKey: parent.rSecretKey
+                                canEdit: false
+                                iconSource: parent.rIconSource
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     Kirigami.Dialog {
