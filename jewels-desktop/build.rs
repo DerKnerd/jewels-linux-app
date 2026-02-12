@@ -34,11 +34,6 @@ fn main() {
     }
     config.include(&qt_include_path).build("src/qt/app.rs");
 
-    for minor in 7..=15 {
-        if qt_version >= Version::new(5, minor, 0) {
-            println!("cargo:rustc-cfg=qt_{}_{}", 5, minor);
-        }
-    }
     let mut minor = 0;
     while qt_version >= Version::new(6, minor, 0) {
         println!("cargo:rustc-cfg=qt_{}_{}", 6, minor);

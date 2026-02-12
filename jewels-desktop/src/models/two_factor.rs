@@ -348,10 +348,7 @@ impl OneTimePasswords {
     fn share_otp(&mut self, otp_id: i64, shared_with_emails: QStringList) {
         let qptr = QPointer::from(&*self);
         let set_otp = qmetaobject::queued_callback(
-            move |(my_otp, shared_otp): (
-                Vec<otp::OneTimePassword>,
-                Vec<otp::SharedOneTimePassword>,
-            )| {
+            move |my_otp: Vec<otp::OneTimePassword>| {
                 if let Some(this) = qptr.as_pinned() {
                     let mut otps_ref = this.borrow_mut();
                     otps_ref.loading = false;
@@ -376,7 +373,7 @@ impl OneTimePasswords {
                     .collect::<Vec<i64>>();
                 if otp::share_one_time_password(otp_id, ids).await.is_ok() {
                     if let Ok(otps) = otp::get_one_time_passwords().await {
-                        set_otp((otps.my_one_time_passwords, otps.shared_one_time_passwords));
+                        set_otp(otps.my_one_time_passwords);
                     }
                 }
             }

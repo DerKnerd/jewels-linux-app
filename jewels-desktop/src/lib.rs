@@ -4,11 +4,13 @@ use libjewels::dbus::{WireguardProxy, get_bus};
 use qmetaobject::prelude::*;
 use qmetaobject::qml_register_singleton_instance;
 use crate::models::{Jewels, Login, Updates, OneTimePasswords, Clipboard, Otp, Owners};
+use crate::qml_exports::qml_exports;
 
 pub mod authentication;
 pub mod models;
 pub mod qt;
 mod api;
+pub mod qml_exports;
 
 qrc!(pages,
     "cloud/ulbricht/jewels" {
@@ -23,6 +25,33 @@ qrc!(pages,
     }
 );
 
+pub fn register_qml_types() {
+    macro_rules! do_register {
+        (
+            module_uri: $uri:literal,
+            major: $maj:literal,
+            minor: $min:literal,
+            types: [ $( ($ty:ty, $name:literal) ),* $(,)? ],
+            singletons: [ $( ($sty:ty, $sname:literal) ),* $(,)? ],
+        ) => {
+            $(
+                qml_register_type::<$ty>(cstr!($uri), $maj, $min, cstr!($name));
+            )*
+            $(
+                qml_register_singleton_instance(
+                    cstr!($uri),
+                    $maj,
+                    $min,
+                    cstr!($sname),
+                    <$sty>::default(),
+                );
+            )*
+        }
+    }
+
+    qml_exports!(do_register);
+}
+
 fn run_app() {
     qmetaobject::log::init_qt_to_rust();
 
@@ -30,13 +59,7 @@ fn run_app() {
 
     qt::app::set_desktop_file("dev.imanuel.jewels");
 
-    qml_register_type::<Jewels>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Jewels"));
-    qml_register_type::<Login>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Login"));
-    qml_register_type::<Updates>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Updates"));
-    qml_register_type::<OneTimePasswords>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("OneTimePasswords"));
-    qml_register_singleton_instance(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Clipboard"), Clipboard::default());
-    qml_register_singleton_instance(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Otp"), Otp::default());
-    qml_register_singleton_instance(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Owners"), Owners::default());
+    register_qml_types();
 
     let mut engine = QmlEngine::new();
     engine.load_file("qrc:/cloud/ulbricht/jewels/qml/ui/MainApp.qml".into());
