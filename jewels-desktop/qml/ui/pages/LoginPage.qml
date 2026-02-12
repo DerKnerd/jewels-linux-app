@@ -15,6 +15,7 @@ Kirigami.ScrollablePage {
     Connections {
         target: login
         function onLoginSuccessful() {
+            Owners.load();
             const stack = applicationWindow().pageStack
             stack.replace(Qt.resolvedUrl("JewelsPage.qml"), {
                 login: login

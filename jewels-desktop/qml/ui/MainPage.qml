@@ -154,7 +154,7 @@ Kirigami.ScrollablePage {
                 info: "Hier kannst du dir alle deine Geräte anschauen, sei es dein Laptop oder ein Smartphone. Du bekommst Informationen zum Gerät und kannst auch schauen ob du bald ein neues brauchst."
             }
             JewelsCard {
-                action: jewelsAction
+                action: twoFactorAction
                 visible: login.loggedIn
                 title: "Zwei Faktor Codes"
                 info: "Du brauchst einen Zwei Faktor Code? Dann bist du hier genau richtig. Such einfach die entsprechende Website raus, kopier dir den Code und los gehts."
