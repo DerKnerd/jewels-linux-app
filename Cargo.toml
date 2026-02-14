@@ -31,9 +31,10 @@ members = [
 [workspace.dependencies]
 alpm = "5"
 anyhow = "1"
-cpp_build = "0.5"
+arboard = {version =  "3.6.1", features = ["wl-clipboard-rs"] }
 configparser = "3"
 cpp = "0.5"
+cpp_build = "0.5"
 cstr = "0.2"
 env_logger = "0.11"
 log = "0.4"
@@ -50,6 +51,7 @@ serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 sysinfo = { version = "0.38", features = ["serde"] }
 tokio = { version = "1", features = ["full"] }
+totp-rs = "5.7.0"
 uuid = { version = "1", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
 xdg = "3"

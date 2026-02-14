@@ -1,5 +1,4 @@
 pragma ComponentBehavior: Bound
-
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
@@ -12,10 +11,16 @@ Kirigami.ApplicationWindow {
 
     Login {
         id: login
+
+        Component.onCompleted: {
+            Owners.load();
+        }
     }
 
-    minimumHeight: Kirigami.Units.gridUnit * 15
-    minimumWidth: Kirigami.Units.gridUnit * 15
+    minimumHeight: Kirigami.Units.gridUnit * 20
+    minimumWidth: Kirigami.Units.gridUnit * 20
+    height: Kirigami.Units.gridUnit * 40
+    width: Kirigami.Units.gridUnit * 65
 
     title: "Jewels"
 

@@ -4,6 +4,8 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+anyhow = { workspace = true }
+arboard = { workspace = true }
 cpp = { workspace = true }
 cstr = { workspace = true }
 env_logger = { workspace = true }
@@ -13,7 +15,10 @@ notify-rust = { workspace = true }
 open = { workspace = true }
 qmetaobject = { workspace = true }
 qttypes = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }
+totp-rs = { workspace = true }
 warp = { workspace = true }
 zbus = { workspace = true }
 
