@@ -10,6 +10,9 @@ pub struct Jewels {
             self.send_data();
         }
     ),
+    checkEolDevices: qt_method!(fn checkEolDevices(&self) {
+        self.check_eol_devices();
+    })
 }
 
 impl Jewels {
@@ -20,6 +23,12 @@ impl Jewels {
     pub fn send_data(&self) {
         tokio::spawn(async move {
             send_device_data().await
+        });
+    }
+
+    pub fn check_eol_devices(&self) {
+        tokio::spawn(async move {
+            crate::eol::eol_check().await;
         });
     }
 }

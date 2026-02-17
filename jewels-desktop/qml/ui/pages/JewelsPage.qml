@@ -7,7 +7,7 @@ import cloud.ulbricht.jewels
 Kirigami.ScrollablePage {
     required property Login login
 
-    title: "Jewels"
+    title: "Meine Geräte"
     id: jewelsPage
 
     GridLayout {

@@ -20,6 +20,7 @@ serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true }
 totp-rs = { workspace = true }
 warp = { workspace = true }
+xdg = { workspace = true }
 zbus = { workspace = true }
 
 [build-dependencies]
