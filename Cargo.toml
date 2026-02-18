@@ -14,7 +14,7 @@ path = "src/bin/jewels-desktop.rs"
 required-features = ["jewels-desktop"]
 
 [workspace.package]
-version = "2.0.1"
+version = "4.0.0"
 edition = "2024"
 
 [workspace]

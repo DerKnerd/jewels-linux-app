@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Jewels
-Comment=Jewels Inventory Desktop Client
-Version=2.0.0
+Comment=Jewels Desktop Client
+Version=4.0.0
 Exec=jewels-desktop
 Icon=jewels
 Type=Application
