@@ -1,10 +1,10 @@
-use crate::api::owner;
 use qmetaobject::{
     QObject, QPointer, SimpleListItem, SimpleListModel, qt_base_class, qt_method, qt_property,
     qt_signal,
 };
 use qttypes::{QByteArray, QString, QVariant};
 use std::cell::RefCell;
+use crate::api;
 
 #[allow(non_snake_case)]
 #[derive(QObject, Default)]
@@ -24,8 +24,8 @@ pub struct Owner {
     pub profilePicture: qt_property!(QString; NOTIFY profilePictureChanged),
 }
 
-impl From<owner::Owner> for Owner {
-    fn from(value: owner::Owner) -> Self {
+impl From<api::owner::Owner> for Owner {
+    fn from(value: api::owner::Owner) -> Self {
         Self {
             base: Default::default(),
 
@@ -83,7 +83,7 @@ pub struct Owners {
 impl Owners {
     fn load_owner(&mut self) {
         let qptr = QPointer::from(&*self);
-        let set_owner = qmetaobject::queued_callback(move |owners: Vec<owner::Owner>| {
+        let set_owner = qmetaobject::queued_callback(move |owners: Vec<api::owner::Owner>| {
             if let Some(this) = qptr.as_pinned() {
                 let owners_ref = this.borrow_mut();
                 owners_ref
@@ -93,7 +93,7 @@ impl Owners {
             }
         });
         tokio::spawn(async move {
-            let owners = owner::get_owners().await.unwrap_or_default();
+            let owners = api::owner::get_owners().await.unwrap_or_default();
             set_owner(owners);
         });
     }
