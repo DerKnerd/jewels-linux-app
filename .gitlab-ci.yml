@@ -37,11 +37,7 @@ build:
   stage: build
   image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   script:
-    - cargo build --release --features systemd
-    - cp target/release/jewels jewels
-  artifacts:
-    paths:
-      - jewels
+    - cargo build --release --all-features --bins
 
 package:
   extends: .base
@@ -55,6 +51,7 @@ package:
   script:
     - cp -r $CI_PROJECT_DIR/* $HOME
     - cd $HOME
+    - cargo build --release --all-features --bins
     - makepkg
     - git clone https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git
     - cp $HOME/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
