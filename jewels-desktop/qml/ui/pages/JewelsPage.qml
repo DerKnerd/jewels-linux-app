@@ -10,18 +10,94 @@ Kirigami.ScrollablePage {
     title: "Meine Geräte"
     id: jewelsPage
 
-    GridLayout {
-        columns: 1
-        flow: GridLayout.TopToBottom
+    Jewels {
+        id: jewels
+    }
+
+    Component.onCompleted: jewels.loadDevices()
+
+    ColumnLayout {
+        anchors.fill: parent
 
         Kirigami.Heading {
+            Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
-            text: "Verbunden"
+            text: "Meine Geräte"
         }
-        Text {
+
+        Controls.BusyIndicator {
+            id: devicesBusyIndicator
+            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+            visible: jewels.isLoading
+        }
+
+        Kirigami.InlineMessage {
+            Layout.alignment: Qt.AlignTop
+            id: loadingFailedMessage
             Layout.fillWidth: true
-            text: "Du bist mit <b>" + login.host + "</b> verbunden"
-            textFormat: Text.RichText
+            visible: jewels.loadingFailed && !jewels.isLoading
+            type: Kirigami.MessageType.Error
+            text: "Leider konnten deine Geräte nicht geladen werden."
+
+            actions: [
+                Kirigami.Action {
+                    text: "Erneut versuchen"
+                    onTriggered: jewels.loadDevices()
+                }
+            ]
+        }
+
+        Repeater {
+            id: view
+
+            model: jewels.devices
+            clip: true
+            delegate: Kirigami.AbstractCard
+            {
+                header: Kirigami.Heading
+                {
+                    text: manufacturer + " " + model
+                    level: 2
+                }
+
+                contentItem: ColumnLayout {
+                    Kirigami.Heading {
+                        text: "Betriebssystem"
+                        level: 3
+                    }
+                    Text {
+                        text: os
+                    }
+
+                    Kirigami.Heading {
+                        text: "Prozessor"
+                        level: 3
+                        visible: deviceType === "computer"
+                    }
+                    Text {
+                        text: cpu
+                        visible: deviceType === "computer"
+                    }
+
+                    Kirigami.Heading {
+                        text: "Arbeitsspeicher"
+                        level: 3
+                        visible: deviceType === "computer"
+                    }
+                    Text {
+                        text: ram.toFixed(2) + " GB"
+                        visible: deviceType === "computer"
+                    }
+
+                    Kirigami.Heading {
+                        text: "Speicherplatz"
+                        level: 3
+                    }
+                    Text {
+                        text: storage.toFixed(2) + " GB"
+                    }
+                }
+            }
         }
     }
 }

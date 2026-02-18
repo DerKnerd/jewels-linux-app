@@ -147,7 +147,7 @@ Kirigami.ScrollablePage {
             JewelsCard {
                 action: jewelsAction
                 info: "Hier kannst du dir alle deine Geräte anschauen, sei es dein Laptop oder ein Smartphone. Du bekommst Informationen zum Gerät und kannst auch schauen ob du bald ein neues brauchst."
-                title: "Jewels"
+                title: "Meine Geräte"
                 visible: login.loggedIn
             }
             JewelsCard {
