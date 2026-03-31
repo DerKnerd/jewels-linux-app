@@ -53,28 +53,10 @@ package:
     - cd $HOME
     - cargo build --release --all-features --bins
     - makepkg
-    - git clone https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git
-    - cp $HOME/$UC_PACKAGED_FILE $HOME/arch/$UC_PACKAGED_FILE
-    - cd arch
-    - git config user.email $UC_BOT_EMAIL
-    - git config user.name "Jewels"
-    - git add .
-    - git commit -m "Add new jewels version"
-    - git push https://$UC_BOT_USERNAME:$UC_ARCH_TOKEN@gitlab.imanuel.dev/packages/arch.git main -o ci.skip
+    - curl --fail-with-body --request PUT --user "$UC_FORGEJO_USER:$UC_FORGEJO_KEY" "https://packages.ulbricht.casa/api/packages/family/arch/family" --upload-file $UC_PACKAGED_FILE
   artifacts:
     paths:
       - $UC_PACKAGED_FILE
   rules:
     - if: $CI_COMMIT_TAG
 
-trigger-repo:
-  variables:
-    UC_PACKAGED_FILE: jewels-$CI_COMMIT_TAG-$REL-x86_64.pkg.tar.zst
-    UC_TAG: $CI_COMMIT_TAG
-    REL: 1
-  stage: deploy
-  trigger:
-    project: packages/arch
-    strategy: depend
-  rules:
-    - if: $CI_COMMIT_TAG
