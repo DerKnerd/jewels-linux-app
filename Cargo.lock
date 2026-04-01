@@ -1381,7 +1381,7 @@ checksum = "92ecc6618181def0457392ccd0ee51198e065e016d1d527a7ac1b6dc7c1f09d2"
 
 [[package]]
 name = "jewels"
-version = "4.0.1"
+version = "4.0.2"
 dependencies = [
  "jewels-desktop",
  "jewelsd",
@@ -1390,7 +1390,7 @@ dependencies = [
 
 [[package]]
 name = "jewels-desktop"
-version = "4.0.1"
+version = "4.0.2"
 dependencies = [
  "anyhow",
  "arboard",
@@ -1416,7 +1416,7 @@ dependencies = [
 
 [[package]]
 name = "jewelsd"
-version = "4.0.1"
+version = "4.0.2"
 dependencies = [
  "env_logger",
  "libjewels",
@@ -1506,7 +1506,7 @@ checksum = "bcc35a38544a891a5f7c865aca548a982ccb3b8650a5b06d0fd33a10283c56fc"
 
 [[package]]
 name = "libjewels"
-version = "4.0.1"
+version = "4.0.2"
 dependencies = [
  "alpm",
  "anyhow",
