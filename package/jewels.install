@@ -2,6 +2,7 @@
 post_install() {
   systemctl daemon-reload
   systemctl enable --now jewelsd.service
+  systemctl reload dbus
 }
 
 post_upgrade() {
