@@ -3,8 +3,12 @@ post_install() {
   systemctl daemon-reload
   systemctl enable --now jewelsd.service
   systemctl reload dbus
+  systemd-sysusers
 }
 
 post_upgrade() {
   systemctl daemon-reload
+  systemctl enable --now jewelsd.service
+  systemctl reload dbus
+  systemd-sysusers
 }

@@ -26,27 +26,32 @@ members = [
 
 [workspace.dependencies]
 alpm = "5"
+alpm-utils = "5"
 anyhow = "1"
-arboard = {version =  "3", features = ["wl-clipboard-rs"] }
+arboard = { version = "3", features = ["wl-clipboard-rs"] }
 configparser = "3"
 cpp = "0.5"
 cpp_build = "0.5"
 cstr = "0.2"
 env_logger = "0.11"
+file-owner = "0.1"
+futures-util = "0.3"
 log = "0.4"
 machine-uid = "0.6.0"
 notify-rust = "4"
 num_cpus = "1"
 open = "5"
+pacmanconf = "3"
 procfs = "0.18"
 qmetaobject = "0.2"
 qttypes = { version = "0.2", features = ["qtquick", "qtquickcontrols2"] }
+raur = "8"
 reqwest = { version = "0.13", features = ["rustls-native-certs", "rustls", "blocking", "json", "charset", "http2"], default-features = false }
 semver = "1"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 smbios-lib = "0.9"
-sysinfo = { version = "0.38", features = ["serde"] }
+srcinfo = "2"
+sysinfo = { version = "0.39.2", features = ["serde"] }
 tokio = { version = "1", features = ["full"] }
 totp-rs = "5.7.0"
 uuid = { version = "1", features = ["v4"] }
