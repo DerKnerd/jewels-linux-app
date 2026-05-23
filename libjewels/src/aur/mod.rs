@@ -42,8 +42,8 @@ impl AurHelper {
         download_progress_sender: DownloadProgressSender,
         update_progress_sender: UpdateProgressSender,
         log_message_sender: LogMessageSender,
-        package_built_sender: PackageBuiltSender,
         package_build_started_sender: PackageBuildStartedSender,
+        package_built_sender: PackageBuiltSender,
         package_failed_sender: PackageFailedSender,
     ) -> Self {
         Self {

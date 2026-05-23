@@ -171,9 +171,15 @@ Kirigami.Page {
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
+            Controls.Label {
+                Layout.minimumWidth: 150
+                Layout.maximumWidth: 150
+                elide: Text.ElideRight
+                text: updates.installPackage
+                visible: updates.updateInProgress && updates.downloadFinished
+            }
             Controls.ProgressBar {
                 Layout.fillWidth: true
-                Layout.columnSpan: 2
                 from: 0
                 to: updates.installHowMany
                 value: updates.installCurrent
