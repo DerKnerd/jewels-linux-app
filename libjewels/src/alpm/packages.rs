@@ -332,22 +332,18 @@ impl AlpmHelper {
         let (mut handle, ..) = self.get_handle_and_callback()?;
 
         handle.trans_init(TransFlag::empty())?;
-        if handle.trans_add().is_empty() && handle.trans_remove().is_empty() {
-            handle.trans_release()?;
-
-            Ok(())
-        } else {
-            for path in package_paths {
-                let pkg = handle.pkg_load(path, true, SigLevel::USE_DEFAULT)?;
-                handle.trans_add_pkg(pkg).map_err(|err| anyhow!(err.to_string()))?;
-            }
-
-            handle.trans_prepare().map_err(|err| anyhow!(err.error()))?;
-            handle.trans_commit()?;
-
-            handle.trans_release()?;
-
-            Ok(())
+        for path in package_paths {
+            let pkg = handle.pkg_load(path, true, SigLevel::USE_DEFAULT)?;
+            handle
+                .trans_add_pkg(pkg)
+                .map_err(|err| anyhow!(err.to_string()))?;
         }
+
+        handle.trans_prepare().map_err(|err| anyhow!(err.error()))?;
+        handle.trans_commit()?;
+
+        handle.trans_release()?;
+
+        Ok(())
     }
 }

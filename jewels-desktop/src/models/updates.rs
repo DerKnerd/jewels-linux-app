@@ -1,4 +1,6 @@
 use libjewels::alpm::{DownloadProgress, UpdatablePackage, UpdateProgress};
+use libjewels::aur::AurPackage;
+use libjewels::dbus::aur::AurProxy;
 use libjewels::dbus::{get_bus, pacman::PacmanProxy};
 use notify_rust::{Hint, Notification, Timeout, Urgency};
 use qmetaobject::{
@@ -50,6 +52,16 @@ impl From<UpdatablePackage> for Package {
             name: QString::from(updatable.name),
             version: QString::from(updatable.new_version),
             description: QString::from(updatable.description),
+        }
+    }
+}
+
+impl From<AurPackage> for Package {
+    fn from(aur: AurPackage) -> Self {
+        Package {
+            name: QString::from(aur.name),
+            version: QString::from(aur.version),
+            description: QString::from(aur.description),
         }
     }
 }
@@ -304,6 +316,12 @@ impl Updates {
         pacman.get_available_updates().await.map_err(Into::into)
     }
 
+    async fn refresh_aur_packages_async() -> zbus::Result<Vec<AurPackage>> {
+        let aur = AurProxy::new(&get_bus().await?).await?;
+
+        aur.get_available_updates().await.map_err(Into::into)
+    }
+
     pub fn refresh_packages(&mut self) {
         self.refreshing = true;
         self.refreshingChanged();
@@ -329,12 +347,44 @@ impl Updates {
                 }
             });
 
+        let qptr = QPointer::from(&*self);
+        let append_aur = qmetaobject::queued_callback(move |updates: Option<Vec<AurPackage>>| {
+            if let Some(this) = qptr.as_pinned() {
+                let mut updates_ref = this.borrow_mut();
+                if let Some(updates) = updates {
+                    updates_ref.updateCount = updates.len() as i32;
+                    updates_ref.refreshingFailed = false;
+                    let mut model = updates_ref.updatablePackages.borrow_mut();
+                    model.reset_data(updates.into_iter().map(Package::from).collect());
+                    updates_ref.updateCountChanged();
+                    updates_ref.refreshingFailedChanged();
+                } else {
+                    updates_ref.refreshingFailed = true;
+                    updates_ref.refreshingFailedChanged();
+                }
+                updates_ref.refreshing = false;
+                updates_ref.refreshingChanged();
+            }
+        });
+
         tokio::spawn(async move {
-            match Self::refresh_packages_async().await {
+            let (pacman, aur) = futures_util::future::join(
+                Self::refresh_packages_async(),
+                Self::refresh_aur_packages_async(),
+            )
+            .await;
+            match pacman {
                 Ok(updates) => refresh(Some(updates)),
                 Err(err) => {
-                    log::error!("Failed to refresh packages: {err:#?}");
+                    log::error!("Failed to refresh pacman packages: {err:#?}");
                     refresh(None)
+                }
+            }
+            match aur {
+                Ok(updates) => append_aur(Some(updates)),
+                Err(err) => {
+                    log::error!("Failed to refresh aur packages: {err:#?}");
+                    append_aur(None)
                 }
             }
         });

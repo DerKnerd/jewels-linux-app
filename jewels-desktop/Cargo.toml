@@ -9,6 +9,7 @@ arboard = { workspace = true }
 cpp = { workspace = true }
 cstr = { workspace = true }
 env_logger = { workspace = true }
+futures-util = { workspace = true }
 libjewels = { path = "../libjewels" }
 log = { workspace = true }
 notify-rust = { workspace = true }

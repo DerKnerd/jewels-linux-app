@@ -8,6 +8,7 @@ alpm = { workspace = true }
 alpm-utils = { workspace = true }
 anyhow = { workspace = true }
 configparser = { workspace = true }
+file-owner = { workspace = true }
 log = { workspace = true }
 machine-uid = { workspace = true }
 num_cpus = { workspace = true }

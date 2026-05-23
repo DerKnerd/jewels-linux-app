@@ -16,6 +16,7 @@ impl AurBuilder {
             .arg("-u")
             .arg(JEWELS_USER)
             .arg("--")
+            .arg("git")
             .arg("clone")
             .arg("--depth=1")
             .arg(url)
@@ -88,7 +89,16 @@ impl AurBuilder {
         log::info!("Executing makepkg for {}...", package);
         self.execute_command(
             "runuser",
-            vec!["-u", JEWELS_USER, "--", "makepkg", "--syncdeps", "--clean"],
+            vec![
+                "-u",
+                JEWELS_USER,
+                "--",
+                "makepkg",
+                "--syncdeps",
+                "--clean",
+                "--noconfirm",
+                "--noprogressbar",
+            ],
             pkg_dir,
         )
         .await?;

@@ -23,13 +23,21 @@ impl Aur {
         let (download_tx, mut download_rx) = tokio::sync::mpsc::channel(16);
         let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel(16);
         let (log_tx, mut log_rx) = tokio::sync::mpsc::channel(16);
+        let (build_started_tx, _) = tokio::sync::mpsc::channel(16);
         let (built_tx, _) = tokio::sync::mpsc::channel(16);
         let (failed_tx, _) = tokio::sync::mpsc::channel(16);
         let (done_tx, mut done_rx) = tokio::sync::mpsc::channel(16);
 
         let path = hdr.path().unwrap();
         let emitter = SignalEmitter::new(conn, path.to_string())?;
-        let aur_helper = AurHelper::new(download_tx, progress_tx, log_tx, built_tx, failed_tx);
+        let aur_helper = AurHelper::new(
+            download_tx,
+            progress_tx,
+            log_tx,
+            build_started_tx,
+            built_tx,
+            failed_tx,
+        );
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -66,13 +74,21 @@ impl Aur {
         let (download_tx, mut download_rx) = tokio::sync::mpsc::channel(16);
         let (progress_tx, mut progress_rx) = tokio::sync::mpsc::channel(16);
         let (log_tx, mut log_rx) = tokio::sync::mpsc::channel(16);
+        let (build_started_tx, mut build_started_rx) = tokio::sync::mpsc::channel(16);
         let (built_tx, mut built_rx) = tokio::sync::mpsc::channel(16);
         let (failed_tx, mut failed_rx) = tokio::sync::mpsc::channel(16);
         let (done_tx, mut done_rx) = tokio::sync::mpsc::channel(16);
 
         let path = hdr.path().unwrap();
         let emitter = SignalEmitter::new(conn, path.to_string())?;
-        let aur_helper = AurHelper::new(download_tx, progress_tx, log_tx, built_tx, failed_tx);
+        let aur_helper = AurHelper::new(
+            download_tx,
+            progress_tx,
+            log_tx,
+            build_started_tx,
+            built_tx,
+            failed_tx,
+        );
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -88,6 +104,9 @@ impl Aur {
                     Some(msg) = built_rx.recv() => {
                         let _ = Aur::built(&emitter, msg).await;
                     }
+                    Some(msg) = build_started_rx.recv() => {
+                        let _ = Aur::build_started(&emitter, msg).await;
+                    }
                     Some(msg) = failed_rx.recv() => {
                         let _ = Aur::failed(&emitter, msg).await;
                     }
@@ -101,13 +120,17 @@ impl Aur {
 
         let emitter = SignalEmitter::new(conn, path.to_string())?;
         tokio::spawn(async move {
-            if let Err(err) = aur_helper.upgrade_aur_packages().await {
+            if let Err(err) = aur_helper.build_aur_packages().await {
+                log::error!("Failed to update the packages {err}");
+                let _ = Aur::failure(&emitter).await;
+            } else if let Err(err) = aur_helper.install_aur_packages().await {
                 log::error!("Failed to update the packages {err}");
                 let _ = Aur::failure(&emitter).await;
             } else {
                 log::info!("Successfully updated the system");
                 let _ = Aur::finished(&emitter).await;
             }
+            let _ = aur_helper.cleanup().await;
             let _ = done_tx.send(()).await;
         });
         Ok(())
@@ -133,6 +156,12 @@ impl Aur {
 
     #[zbus(signal)]
     pub async fn failure(signal_emitter: &SignalEmitter<'_>) -> zbus::Result<()>;
+
+    #[zbus(signal)]
+    pub async fn build_started(
+        signal_emitter: &SignalEmitter<'_>,
+        package: String,
+    ) -> zbus::Result<()>;
 
     #[zbus(signal)]
     pub async fn built(signal_emitter: &SignalEmitter<'_>, package: String) -> zbus::Result<()>;

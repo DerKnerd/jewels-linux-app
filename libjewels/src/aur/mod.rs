@@ -2,12 +2,12 @@ mod build;
 pub mod consts;
 mod gpg;
 
-use std::collections::BTreeMap;
-
 use crate::alpm::{AlpmHelper, DownloadProgressSender, LogMessageSender, UpdateProgressSender};
 use crate::aur::build::AurBuilder;
+use crate::aur::consts::{JEWELS_BUILD_DIR, JEWELS_PACKAGE_DIR, JEWELS_USER};
 use raur::Raur;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use tokio::sync::mpsc::{Receiver, Sender};
 use zbus::zvariant::Type;
 
@@ -17,6 +17,9 @@ pub struct AurPackage {
     pub version: String,
     pub description: String,
 }
+
+pub type PackageBuildStartedReceiver = Receiver<String>;
+pub type PackageBuildStartedSender = Sender<String>;
 
 pub type PackageBuiltReceiver = Receiver<String>;
 pub type PackageBuiltSender = Sender<String>;
@@ -29,6 +32,7 @@ pub struct AurHelper {
     download_progress_sender: DownloadProgressSender,
     update_progress_sender: UpdateProgressSender,
     log_message_sender: LogMessageSender,
+    package_build_started_sender: PackageBuildStartedSender,
     package_built_sender: PackageBuiltSender,
     package_failed_sender: PackageFailedSender,
 }
@@ -39,12 +43,14 @@ impl AurHelper {
         update_progress_sender: UpdateProgressSender,
         log_message_sender: LogMessageSender,
         package_built_sender: PackageBuiltSender,
+        package_build_started_sender: PackageBuildStartedSender,
         package_failed_sender: PackageFailedSender,
     ) -> Self {
         Self {
             download_progress_sender,
             update_progress_sender,
             log_message_sender,
+            package_build_started_sender,
             package_built_sender,
             package_failed_sender,
         }
@@ -99,14 +105,20 @@ impl AurHelper {
         Ok(packages_to_upgrade)
     }
 
-    pub async fn upgrade_aur_packages(&self) -> anyhow::Result<()> {
+    pub async fn build_aur_packages(&self) -> anyhow::Result<()> {
         log::info!("Upgrading AUR packages...");
         log::info!("Creating build directory...");
-        tokio::fs::create_dir_all("/tmp/jewels/build").await?;
+        tokio::fs::create_dir_all(JEWELS_BUILD_DIR).await?;
+        tokio::fs::create_dir_all(JEWELS_PACKAGE_DIR).await?;
+        file_owner::set_owner(JEWELS_BUILD_DIR, JEWELS_USER)?;
+        file_owner::set_owner(JEWELS_PACKAGE_DIR, JEWELS_USER)?;
         let upgradable_packages = self.get_upgradable_packages().await?;
         let aur_builder = AurBuilder {};
         for pkg in upgradable_packages {
             log::info!("Building {}...", pkg.name);
+            self.package_build_started_sender
+                .send(pkg.name.clone())
+                .await?;
             match aur_builder.build(&pkg.name).await {
                 Ok(()) => {
                     log::info!("Successfully built {}", pkg.name);
@@ -117,8 +129,32 @@ impl AurHelper {
                     let _ = self.package_failed_sender.send(pkg.name.clone()).await;
                 }
             }
+            break;
         }
 
+        Ok(())
+    }
+
+    pub async fn install_aur_packages(&self) -> anyhow::Result<()> {
+        log::info!("Installing AUR packages...");
+        let alpm_helper = AlpmHelper::new(
+            self.download_progress_sender.clone(),
+            self.update_progress_sender.clone(),
+            self.log_message_sender.clone(),
+        );
+        let mut packages = tokio::fs::read_dir(JEWELS_PACKAGE_DIR).await?;
+        let mut packages_to_install = vec![];
+        while let Ok(Some(pkg)) = packages.next_entry().await {
+            packages_to_install.push(pkg.path().into_os_string().into_string().unwrap());
+        }
+
+        alpm_helper.install_packages(packages_to_install)
+    }
+
+    pub async fn cleanup(&self) -> anyhow::Result<()> {
+        log::info!("Cleaning up...");
+        tokio::fs::remove_dir_all(JEWELS_BUILD_DIR).await?;
+        tokio::fs::remove_dir_all(JEWELS_PACKAGE_DIR).await?;
         Ok(())
     }
 }
