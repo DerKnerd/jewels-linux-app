@@ -62,8 +62,7 @@ Kirigami.Page {
             actions: [
                 Kirigami.Action {
                     text: "Such nochmal"
-                    // onTriggered: updates.refreshCache()
-                    onTriggered: updates.updateSystem()
+                    onTriggered: updates.refreshCache()
                 }
             ]
         }
@@ -92,7 +91,7 @@ Kirigami.Page {
             rowSpacing: Kirigami.Units.smallSpacing
             columnSpacing: Kirigami.Units.smallSpacing
 
-            Text {
+            Controls.Label {
                 Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
                 elide: Text.ElideRight
@@ -106,13 +105,13 @@ Kirigami.Page {
                 value: updates.downloadStatus1.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-            Text {
+            Controls.Label {
                 Layout.alignment: Qt.AlignRight
                 text: `${updates.downloadStatus1.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
-            Text {
+            Controls.Label {
                 Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
                 elide: Text.ElideRight
@@ -126,13 +125,13 @@ Kirigami.Page {
                 value: updates.downloadStatus2.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-            Text {
+            Controls.Label {
                 Layout.alignment: Qt.AlignRight
                 text: `${updates.downloadStatus2.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
-            Text {
+            Controls.Label {
                 Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
                 elide: Text.ElideRight
@@ -146,13 +145,13 @@ Kirigami.Page {
                 value: updates.downloadStatus3.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-            Text {
+            Controls.Label {
                 Layout.alignment: Qt.AlignRight
                 text: `${updates.downloadStatus3.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
 
-            Text {
+            Controls.Label {
                 Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
                 elide: Text.ElideRight
@@ -166,7 +165,7 @@ Kirigami.Page {
                 value: updates.downloadStatus4.current
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-            Text {
+            Controls.Label {
                 Layout.alignment: Qt.AlignRight
                 text: `${updates.downloadStatus4.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
@@ -180,7 +179,7 @@ Kirigami.Page {
                 value: updates.installCurrent
                 visible: updates.updateInProgress && updates.downloadFinished
             }
-            Text {
+            Controls.Label {
                 text: `${updates.installCurrent} von ${updates.installHowMany}`
                 visible: updates.updateInProgress && updates.downloadFinished
             }
@@ -204,7 +203,7 @@ Kirigami.Page {
                             text: name
                             level: 2
                         }
-                        Text {
+                        Controls.Label {
                             Layout.alignment: Qt.AlignRight
                             text: version
                             opacity: 0.5
@@ -212,7 +211,7 @@ Kirigami.Page {
                         }
                     }
 
-                    contentItem: Text
+                    contentItem: Controls.Label
                     {
                         text: description
                         wrapMode: Text.WordWrap

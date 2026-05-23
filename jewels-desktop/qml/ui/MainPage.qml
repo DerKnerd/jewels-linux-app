@@ -170,7 +170,7 @@ Kirigami.ScrollablePage {
         implicitWidth: Kirigami.Units.gridUnit * 30
         showClickFeedback: true
 
-        contentItem: Text {
+        contentItem: Controls.Label {
             text: info
             wrapMode: Text.WordWrap
         }

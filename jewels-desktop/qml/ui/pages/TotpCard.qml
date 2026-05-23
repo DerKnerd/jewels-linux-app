@@ -138,7 +138,7 @@ Kirigami.AbstractCard {
                 text: accountIssuer
                 wrapMode: Text.NoWrap
             }
-            Text {
+            Controls.Label {
                 id: otpCode
 
                 Layout.fillWidth: true
@@ -147,7 +147,7 @@ Kirigami.AbstractCard {
                 horizontalAlignment: Text.AlignHCenter
                 text: Otp.generate(secretKey)
             }
-            Text {
+            Controls.Label {
                 Layout.fillWidth: true
                 elide: Text.ElideRight
                 horizontalAlignment: Text.AlignHCenter

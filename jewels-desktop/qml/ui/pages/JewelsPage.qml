@@ -65,7 +65,7 @@ Kirigami.ScrollablePage {
                         text: "Betriebssystem"
                         level: 3
                     }
-                    Text {
+                    Controls.Label {
                         text: os
                     }
 
@@ -74,7 +74,7 @@ Kirigami.ScrollablePage {
                         level: 3
                         visible: deviceType === "computer"
                     }
-                    Text {
+                    Controls.Label {
                         text: cpu
                         visible: deviceType === "computer"
                     }
@@ -84,7 +84,7 @@ Kirigami.ScrollablePage {
                         level: 3
                         visible: deviceType === "computer"
                     }
-                    Text {
+                    Controls.Label {
                         text: ram.toFixed(2) + " GB"
                         visible: deviceType === "computer"
                     }
@@ -93,7 +93,7 @@ Kirigami.ScrollablePage {
                         text: "Speicherplatz"
                         level: 3
                     }
-                    Text {
+                    Controls.Label {
                         text: storage.toFixed(2) + " GB"
                     }
                 }
