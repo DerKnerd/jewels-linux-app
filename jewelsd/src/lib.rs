@@ -1,5 +1,6 @@
-use libjewels::dbus::{Pacman, Wireguard, get_builder};
+use libjewels::dbus::{Wireguard, get_builder, pacman::Pacman};
 use std::future::pending;
+use libjewels::dbus::aur::Aur;
 
 pub async fn start_jewelsd() -> std::io::Result<()> {
     env_logger::init();
@@ -10,15 +11,11 @@ pub async fn start_jewelsd() -> std::io::Result<()> {
         .map_err(std::io::Error::other)?
         .name("cloud.ulbricht.jewels.JewelsKit")
         .map_err(std::io::Error::other)?
-        .serve_at(
-            "/cloud/ulbricht/jewels/Wireguard",
-            Wireguard::default(),
-        )
+        .serve_at("/cloud/ulbricht/jewels/Wireguard", Wireguard::default())
         .map_err(std::io::Error::other)?
-        .serve_at(
-            "/cloud/ulbricht/jewels/Pacman",
-            Pacman::default(),
-        )
+        .serve_at("/cloud/ulbricht/jewels/Pacman", Pacman::default())
+        .map_err(std::io::Error::other)?
+        .serve_at("/cloud/ulbricht/jewels/Aur", Aur::default())
         .map_err(std::io::Error::other)?
         .build()
         .await;

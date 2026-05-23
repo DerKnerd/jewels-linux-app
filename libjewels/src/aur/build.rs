@@ -1,4 +1,3 @@
-use crate::aur::AurEvent;
 use crate::aur::consts::{JEWELS_BUILD_DIR, JEWELS_PACKAGE_DIR, JEWELS_USER};
 use crate::aur::gpg::import_gpg_keys;
 use srcinfo::Srcinfo;
@@ -7,7 +6,6 @@ use std::process::{ExitStatus, Stdio};
 use std::str::FromStr;
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
-use tokio::sync::mpsc;
 
 pub struct AurBuilder {}
 
@@ -70,7 +68,7 @@ impl AurBuilder {
         child.wait().await
     }
 
-    pub async fn build(&self, package: &str, tx: &mpsc::Sender<AurEvent>) -> anyhow::Result<()> {
+    pub async fn build(&self, package: &str) -> anyhow::Result<()> {
         let pkg_dir = PathBuf::from_str(JEWELS_BUILD_DIR)?.join(package);
 
         self.clone_repo(
@@ -82,7 +80,7 @@ impl AurBuilder {
         let srcinfo_path = pkg_dir.join(".SRCINFO");
         if srcinfo_path.exists() {
             if let Ok(info) = Srcinfo::from_path(srcinfo_path) {
-                import_gpg_keys(package, info, tx).await;
+                import_gpg_keys(package, info).await?;
             }
         }
 

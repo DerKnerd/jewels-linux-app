@@ -1,5 +1,5 @@
 use libjewels::alpm::{DownloadProgress, UpdatablePackage, UpdateProgress};
-use libjewels::dbus::{PacmanProxy, get_bus};
+use libjewels::dbus::{get_bus, pacman::PacmanProxy};
 use notify_rust::{Hint, Notification, Timeout, Urgency};
 use qmetaobject::{
     QObject, QPointer, SimpleListItem, SimpleListModel, qt_base_class, qt_method, qt_property,

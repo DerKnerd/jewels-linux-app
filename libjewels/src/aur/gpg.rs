@@ -1,11 +1,9 @@
-use crate::aur::AurEvent;
 use crate::aur::consts::JEWELS_USER;
 use srcinfo::Srcinfo;
 use std::process::Stdio;
 use tokio::process::Command;
-use tokio::sync::mpsc;
 
-pub async fn import_gpg_keys(package: &str, info: Srcinfo, tx: &mpsc::Sender<AurEvent>) {
+pub async fn import_gpg_keys(package: &str, info: Srcinfo) -> std::io::Result<()> {
     log::info!("Importing GPG keys for {}...", package);
     let keys = info
         .base
@@ -17,37 +15,25 @@ pub async fn import_gpg_keys(package: &str, info: Srcinfo, tx: &mpsc::Sender<Aur
         if gpg_key_known(&key_id).await {
             continue;
         }
-        
-        log::info!("Importing GPG key {}...", key_id);
 
+        log::info!("Importing GPG key {}...", key_id);
         let result = Command::new("runuser")
             .args(["-u", JEWELS_USER, "--", "gpg", "--recv-keys", &key_id])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .status()
-            .await;
-
-        match result {
-            Ok(s) if !s.success() => {
-                let _ = tx
-                    .send(AurEvent::PackageError {
-                        package: package.to_string(),
-                        reason: format!("gpg exited {}", s.code().unwrap_or(-1)),
-                    })
-                    .await;
-            }
-            Err(e) => {
-                let _ = tx
-                    .send(AurEvent::PackageError {
-                        package: package.to_string(),
-                        reason: e.to_string(),
-                    })
-                    .await;
-            }
-            _ => {}
+            .await?;
+        if !result.success() {
+            log::error!("Failed to import GPG key {}: {}", key_id, result);
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Failed to import GPG key",
+            ));
         }
     }
+
+    Ok(())
 }
 
 async fn gpg_key_known(key_id: &str) -> bool {

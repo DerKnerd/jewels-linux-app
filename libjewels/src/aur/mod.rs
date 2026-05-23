@@ -4,36 +4,59 @@ mod gpg;
 
 use std::collections::BTreeMap;
 
-use crate::alpm::AlpmHelper;
+use crate::alpm::{AlpmHelper, DownloadProgressSender, LogMessageSender, UpdateProgressSender};
 use crate::aur::build::AurBuilder;
 use raur::Raur;
-use tokio::sync::mpsc;
+use serde::{Deserialize, Serialize};
+use tokio::sync::mpsc::{Receiver, Sender};
+use zbus::zvariant::Type;
 
-#[derive(Debug, Clone)]
-pub enum AurEvent {
-    /// Package successfully upgraded.
-    PackageDone { package: String },
-
-    /// Something went wrong for one package (non-fatal; others continue).
-    PackageError { package: String, reason: String },
-}
-
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
 pub struct AurPackage {
     pub name: String,
     pub version: String,
     pub description: String,
 }
 
-pub struct AurHelper {}
+pub type PackageBuiltReceiver = Receiver<String>;
+pub type PackageBuiltSender = Sender<String>;
+
+pub type PackageFailedReceiver = Receiver<String>;
+pub type PackageFailedSender = Sender<String>;
+
+#[derive(Debug, Clone)]
+pub struct AurHelper {
+    download_progress_sender: DownloadProgressSender,
+    update_progress_sender: UpdateProgressSender,
+    log_message_sender: LogMessageSender,
+    package_built_sender: PackageBuiltSender,
+    package_failed_sender: PackageFailedSender,
+}
 
 impl AurHelper {
+    pub fn new(
+        download_progress_sender: DownloadProgressSender,
+        update_progress_sender: UpdateProgressSender,
+        log_message_sender: LogMessageSender,
+        package_built_sender: PackageBuiltSender,
+        package_failed_sender: PackageFailedSender,
+    ) -> Self {
+        Self {
+            download_progress_sender,
+            update_progress_sender,
+            log_message_sender,
+            package_built_sender,
+            package_failed_sender,
+        }
+    }
+
     pub async fn get_upgradable_packages(&self) -> anyhow::Result<Vec<AurPackage>> {
         log::info!("Checking for AUR packages to upgrade...");
-        let (dummy_dl_rx, _) = mpsc::channel(1);
-        let (dummy_pr_rx, _) = mpsc::channel(1);
-        let (dummy_lm_rx, _) = mpsc::channel(1);
-
-        let alpm_helper = AlpmHelper::new(dummy_dl_rx, dummy_pr_rx, dummy_lm_rx);
+        let alpm_helper = AlpmHelper::new(
+            self.download_progress_sender.clone(),
+            self.update_progress_sender.clone(),
+            self.log_message_sender.clone(),
+        );
 
         log::info!("Getting foreign packages...");
         let foreign_packages = alpm_helper.get_foreign_packages()?;
@@ -76,10 +99,7 @@ impl AurHelper {
         Ok(packages_to_upgrade)
     }
 
-    pub async fn upgrade_aur_packages(
-        &self,
-        package_sender: &mpsc::Sender<AurEvent>,
-    ) -> anyhow::Result<()> {
+    pub async fn upgrade_aur_packages(&self) -> anyhow::Result<()> {
         log::info!("Upgrading AUR packages...");
         log::info!("Creating build directory...");
         tokio::fs::create_dir_all("/tmp/jewels/build").await?;
@@ -87,23 +107,14 @@ impl AurHelper {
         let aur_builder = AurBuilder {};
         for pkg in upgradable_packages {
             log::info!("Building {}...", pkg.name);
-            match aur_builder.build(&pkg.name, &package_sender).await {
+            match aur_builder.build(&pkg.name).await {
                 Ok(()) => {
                     log::info!("Successfully built {}", pkg.name);
-                    let _ = package_sender
-                        .send(AurEvent::PackageDone {
-                            package: pkg.name.clone(),
-                        })
-                        .await;
+                    let _ = self.package_built_sender.send(pkg.name.clone()).await;
                 }
                 Err(e) => {
                     log::error!("Failed to build {}: {}", pkg.name, e);
-                    let _ = package_sender
-                        .send(AurEvent::PackageError {
-                            package: pkg.name.clone(),
-                            reason: format!("{e}"),
-                        })
-                        .await;
+                    let _ = self.package_failed_sender.send(pkg.name.clone()).await;
                 }
             }
         }

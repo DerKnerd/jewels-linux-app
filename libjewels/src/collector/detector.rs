@@ -1,11 +1,10 @@
 use crate::collector::{Bios, Cpu, Device, Drive, Kernel, Mainboard, OperatingSystem};
-use smbioslib::*;
 use sysinfo::System;
 
 const UNKNOWN_VALUE: &str = "Unbekannt";
 
-fn read_dmi(path: &str) -> io::Result<String> {
-    let data = fs::read_to_string(format!("/sys/class/dmi/id/{path}"))?;
+fn read_dmi(path: &str) -> std::io::Result<String> {
+    let data = std::fs::read_to_string(format!("/sys/class/dmi/id/{path}"))?;
 
     Ok(data.trim().to_string())
 }
@@ -28,23 +27,23 @@ fn get_block_devices() -> Result<Vec<Drive>, Box<dyn std::error::Error>> {
         let base_path = format!("/sys/class/block/{}", stat.name);
 
         // Determine if it's a partition (simple heuristic)
-        let is_partition = !fs::exists(format!("{base_path}/device")).unwrap_or(false);
+        let is_partition = !std::fs::exists(format!("{base_path}/device")).unwrap_or(false);
         if is_partition {
             continue;
         }
 
-        let model =
-            fs::read_to_string(format!("{base_path}/device/model")).map(|s| s.trim().to_string());
+        let model = std::fs::read_to_string(format!("{base_path}/device/model"))
+            .map(|s| s.trim().to_string());
         let manufacturer = if stat.name.starts_with("nvme") {
-            fs::read_to_string(format!("/sys/class/nvme/{}/device/vendor", &stat.name[..5]))
+            std::fs::read_to_string(format!("/sys/class/nvme/{}/device/vendor", &stat.name[..5]))
         } else {
-            fs::read_to_string(format!("{base_path}/device/vendor"))
+            std::fs::read_to_string(format!("{base_path}/device/vendor"))
         }
         .map(|s| s.trim().to_string());
 
         // Get size from /sys/class/block/{device}/size
         let size_path = format!("/sys/class/block/{}/size", stat.name);
-        let size_sectors = fs::read_to_string(&size_path)
+        let size_sectors = std::fs::read_to_string(&size_path)
             .ok()
             .and_then(|s| s.trim().parse::<u64>().ok())
             .unwrap_or(0);
