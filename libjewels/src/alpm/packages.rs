@@ -1,5 +1,6 @@
 use crate::alpm::{clear_stale_pacman_lock, get_alpm_handle};
-use alpm::{Alpm, DownloadEvent, DownloadResult, LogLevel, Question, TransFlag};
+use alpm::{Alpm, DownloadEvent, DownloadResult, LogLevel, Question, SigLevel, TransFlag};
+use alpm_utils::DbListExt;
 use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
@@ -258,7 +259,7 @@ impl AlpmHelper {
         Ok((handle, callback))
     }
 
-    pub fn update_system(self) -> Result<(), anyhow::Error> {
+    pub fn update_system(self) -> anyhow::Result<()> {
         let (mut handle, callback) = self.clone().get_handle_and_callback()?;
 
         handle.syncdbs_mut().update(true)?;
@@ -269,14 +270,14 @@ impl AlpmHelper {
 
         handle.sync_sysupgrade(false)?;
         if handle.trans_add().is_empty() && handle.trans_remove().is_empty() {
-            handle.trans_release().map_err(|err| anyhow!(err))?;
+            handle.trans_release()?;
 
             Ok(())
         } else {
             handle.trans_prepare().map_err(|err| anyhow!(err.error()))?;
-            handle.trans_commit().map_err(|err| anyhow!(err.error()))?;
+            handle.trans_commit()?;
 
-            handle.trans_release().map_err(|err| anyhow!(err))?;
+            handle.trans_release()?;
 
             if let Some(FailureReason::PackageCorrupted) = callback.clone().borrow().failure {
                 log::error!("Got corrupted packages, resync the keyrings and try again");
@@ -308,5 +309,45 @@ impl AlpmHelper {
         handle.trans_release()?;
 
         Ok(result)
+    }
+
+    pub fn get_foreign_packages(self) -> anyhow::Result<Vec<(String, String)>> {
+        let handle = get_alpm_handle()?;
+
+        let local_db = handle.localdb();
+        let sync_dbs = handle.syncdbs();
+
+        let foreign = local_db
+            .pkgs()
+            .iter()
+            // A package is "foreign" when none of the sync dbs know about it
+            .filter(|pkg| sync_dbs.pkg(pkg.name()).is_err())
+            .map(|pkg| (pkg.name().to_string(), pkg.version().to_string()))
+            .collect();
+
+        Ok(foreign)
+    }
+
+    pub fn install_packages(self, package_paths: Vec<String>) -> anyhow::Result<()> {
+        let (mut handle, ..) = self.get_handle_and_callback()?;
+
+        handle.trans_init(TransFlag::empty())?;
+        if handle.trans_add().is_empty() && handle.trans_remove().is_empty() {
+            handle.trans_release()?;
+
+            Ok(())
+        } else {
+            for path in package_paths {
+                let pkg = handle.pkg_load(path, true, SigLevel::USE_DEFAULT)?;
+                handle.trans_add_pkg(pkg).map_err(|err| anyhow!(err.to_string()))?;
+            }
+
+            handle.trans_prepare().map_err(|err| anyhow!(err.error()))?;
+            handle.trans_commit()?;
+
+            handle.trans_release()?;
+
+            Ok(())
+        }
     }
 }

@@ -19,6 +19,7 @@ package() {
   desktopDir="${pkgdir}/usr/share/applications"
   iconsDir="${pkgdir}/usr/share/icons/hicolor/scalable/apps"
   binDir="${pkgdir}/usr/bin"
+  sysusersDir="${pkgdir}/usr/lib/sysusers.d"
 
   # systemd unit
   install -Dm644 "${startdir}/package/systemd/jewelsd.service" "${systemdDir}/jewelsd.service"
@@ -36,4 +37,7 @@ package() {
   # binaries
   install -Dm755 "${startdir}/target/release/jewelsd" "${binDir}/jewelsd"
   install -Dm755 "${startdir}/target/release/jewels-desktop" "${binDir}/jewels-desktop"
+
+  # install jewels user
+  install -Dm644 "${startdir}/package/sysusers.d/jewels.conf" "${sysusersDir}/jewels.conf"
 }
