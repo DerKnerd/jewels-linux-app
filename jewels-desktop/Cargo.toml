@@ -14,10 +14,12 @@ libjewels = { path = "../libjewels" }
 log = { workspace = true }
 notify-rust = { workspace = true }
 open = { workspace = true }
+progress_bar = { workspace = true }
 qmetaobject = { workspace = true }
 qttypes = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+termsize = { workspace = true }
 tokio = { workspace = true }
 totp-rs = { workspace = true }
 warp = { workspace = true }

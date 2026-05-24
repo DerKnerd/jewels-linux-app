@@ -9,7 +9,7 @@ path = "src/bin/jewelsd.rs"
 required-features = ["jewelsd"]
 
 [[bin]]
-name = "jewels-desktop"
+name = "jewels"
 path = "src/bin/jewels-desktop.rs"
 required-features = ["jewels-desktop"]
 
@@ -29,6 +29,7 @@ alpm = "5"
 alpm-utils = "5"
 anyhow = "1"
 arboard = { version = "3", features = ["wl-clipboard-rs"] }
+clap = { version = "4", features = ["derive"] }
 configparser = "3"
 cpp = "0.5"
 cpp_build = "0.5"
@@ -43,6 +44,7 @@ num_cpus = "1"
 open = "5"
 pacmanconf = "3"
 procfs = "0.18"
+progress_bar = "1"
 qmetaobject = "0.2"
 qttypes = { version = "0.2", features = ["qtquick", "qtquickcontrols2"] }
 raur = "8"
@@ -52,6 +54,7 @@ serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 srcinfo = "2"
 sysinfo = { version = "0.39.2", features = ["serde"] }
+termsize = "0.1"
 tokio = { version = "1", features = ["full"] }
 totp-rs = "5.7.0"
 uuid = { version = "1", features = ["v4"] }
@@ -64,6 +67,7 @@ zbus_systemd = { version = "0.26000.0", features = ["systemd1"] }
 jewels-desktop = { path = "jewels-desktop", optional = true }
 jewelsd = { path = "jewelsd", optional = true }
 
+clap = { workspace = true }
 tokio = { workspace = true }
 
 [features]

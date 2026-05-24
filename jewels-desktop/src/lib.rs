@@ -9,6 +9,7 @@ pub mod authentication;
 mod eol;
 pub mod models;
 pub mod qt;
+pub mod updater;
 
 qrc!(pages,
     "cloud/ulbricht/jewels" {
@@ -72,13 +73,19 @@ fn run_app() {
     engine.exec();
 }
 
-async fn update_wireguard() -> zbus::Result<()> {
+pub async fn update_wireguard() -> zbus::Result<()> {
     let connection = get_bus().await?;
     let proxy = WireguardProxy::new(&connection).await?;
     proxy
         .update_wireguard(load_config())
         .await
         .map_err(Into::into)
+}
+
+pub async fn update_system() -> std::io::Result<()> {
+    updater::update_system()
+        .await
+        .map_err(std::io::Error::other)
 }
 
 pub fn jewels_desktop() -> std::io::Result<()> {
