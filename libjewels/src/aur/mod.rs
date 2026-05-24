@@ -130,7 +130,6 @@ impl AurHelper {
                     let _ = self.package_failed_sender.send(pkg.name.clone()).await;
                 }
             }
-            break;
         }
 
         Ok(())
@@ -150,7 +149,7 @@ impl AurHelper {
             packages_to_install.push(pkg.path().into_os_string().into_string().unwrap());
         }
 
-        alpm_helper.install_packages(packages_to_install)
+        alpm_helper.install_package_paths(packages_to_install)
     }
 
     pub async fn cleanup(&self) -> anyhow::Result<()> {
