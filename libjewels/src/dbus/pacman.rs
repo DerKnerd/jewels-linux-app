@@ -1,5 +1,5 @@
 use crate::alpm::{
-    AlpmHelper, DownloadProgress, InstallablePackage, LogMessage, UpdatablePackage, UpdateProgress,
+    AlpmHelper, DownloadProgress, InstallablePackage, LogMessage, UpdatablePackage, InstallProgress,
 };
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
@@ -177,7 +177,7 @@ impl Pacman {
     #[zbus(signal)]
     pub async fn update(
         signal_emitter: &SignalEmitter<'_>,
-        progress: UpdateProgress,
+        progress: InstallProgress,
     ) -> zbus::Result<()>;
 
     #[zbus(signal)]

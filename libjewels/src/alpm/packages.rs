@@ -10,7 +10,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use zbus::zvariant::Type;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
-pub struct UpdateProgress {
+pub struct InstallProgress {
     pub package: String,
     pub percent: i32,
     pub howmany: usize,
@@ -44,8 +44,13 @@ pub struct InstallablePackage {
     pub description: String,
 }
 
-pub type UpdateProgressReceiver = Receiver<UpdateProgress>;
-pub type UpdateProgressSender = Sender<UpdateProgress>;
+pub struct Pkg {
+    pub pkg: InstallablePackage,
+    pub install_date: Option<i64>,
+}
+
+pub type InstallProgressReceiver = Receiver<InstallProgress>;
+pub type InstallProgressSender = Sender<InstallProgress>;
 
 pub type DownloadProgressReceiver = Receiver<DownloadProgress>;
 pub type DownloadProgressSender = Sender<DownloadProgress>;
@@ -66,7 +71,7 @@ struct Callback {
 #[derive(Debug, Clone)]
 pub struct AlpmHelper {
     download_progress_sender: DownloadProgressSender,
-    update_progress_sender: UpdateProgressSender,
+    update_progress_sender: InstallProgressSender,
     log_message_sender: LogMessageSender,
     max_concurrent: u32,
 }
@@ -74,7 +79,7 @@ pub struct AlpmHelper {
 impl AlpmHelper {
     pub fn new(
         download_progress_sender: DownloadProgressSender,
-        update_progress_sender: UpdateProgressSender,
+        update_progress_sender: InstallProgressSender,
         log_message_sender: LogMessageSender,
         max_concurrent: u32,
     ) -> Self {
@@ -97,12 +102,13 @@ impl AlpmHelper {
         log::log!(rust_level, "{}", msg.trim_end());
         let sender = self.log_message_sender.clone();
         tokio::spawn(async move {
-            if !sender.is_closed() && let Err(err) = sender
-                .send(LogMessage {
-                    message: msg.to_string(),
-                    level: rust_level.to_string(),
-                })
-                .await
+            if !sender.is_closed()
+                && let Err(err) = sender
+                    .send(LogMessage {
+                        message: msg.to_string(),
+                        level: rust_level.to_string(),
+                    })
+                    .await
             {
                 log::error!("Failed to send log progress: {}", err);
             }
@@ -113,14 +119,15 @@ impl AlpmHelper {
         log::info!("{name} {percent}% ({n}/{total})");
         let sender = self.update_progress_sender.clone();
         tokio::spawn(async move {
-            if let Err(err) = sender
-                .send(UpdateProgress {
-                    package: name.to_string(),
-                    percent,
-                    howmany: total,
-                    current: n,
-                })
-                .await
+            if !sender.is_closed()
+                && let Err(err) = sender
+                    .send(InstallProgress {
+                        package: name.to_string(),
+                        percent,
+                        howmany: total,
+                        current: n,
+                    })
+                    .await
             {
                 log::error!("Failed to send update progress: {err}");
             }
@@ -166,13 +173,14 @@ impl AlpmHelper {
             match download_event {
                 DownloadEvent::Progress(evt) => {
                     log::info!("{filename}: {}/{}", evt.downloaded, evt.total);
-                    if let Err(err) = sender
-                        .send(DownloadProgress {
-                            status: evt.downloaded,
-                            total: evt.total,
-                            filename: filename.to_string(),
-                        })
-                        .await
+                    if !sender.is_closed()
+                        && let Err(err) = sender
+                            .send(DownloadProgress {
+                                status: evt.downloaded,
+                                total: evt.total,
+                                filename: filename.to_string(),
+                            })
+                            .await
                     {
                         log::error!("Failed to send download progress: {}", err);
                     }
@@ -180,13 +188,14 @@ impl AlpmHelper {
                 DownloadEvent::Completed(evt) => {
                     if !matches!(evt.result, DownloadResult::Failed) {
                         log::info!("{filename}: {}/{}", evt.total, evt.total);
-                        if let Err(err) = sender
-                            .send(DownloadProgress {
-                                status: evt.total,
-                                total: evt.total,
-                                filename: filename.to_string(),
-                            })
-                            .await
+                        if !sender.is_closed()
+                            && let Err(err) = sender
+                                .send(DownloadProgress {
+                                    status: evt.total,
+                                    total: evt.total,
+                                    filename: filename.to_string(),
+                                })
+                                .await
                         {
                             log::error!("Failed to send download progress: {}", err);
                         }
@@ -400,13 +409,17 @@ impl AlpmHelper {
     }
 
     pub fn search_packages(self, query: String) -> anyhow::Result<Vec<InstallablePackage>> {
-        let (handle, ..) = self.get_handle_and_callback()?;
+        let (mut handle, ..) = self.get_handle_and_callback()?;
+        handle.syncdbs_mut().update(false)?;
+
         let dbs = handle.syncdbs();
+        let localdb = handle.localdb();
 
         let results = dbs
             .iter()
             .flat_map(|db| db.search([query.as_str()].iter()))
             .flat_map(|pkgs| pkgs)
+            .filter(|pkg| localdb.pkg(pkg.name()).is_err())
             .map(|pkg| InstallablePackage {
                 name: pkg.name().to_string(),
                 version: pkg.version().to_string(),

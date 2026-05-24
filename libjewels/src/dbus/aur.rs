@@ -1,4 +1,4 @@
-use crate::alpm::{DownloadProgress, LogMessage, UpdateProgress};
+use crate::alpm::{DownloadProgress, LogMessage, InstallProgress};
 use crate::aur::{AurHelper, AurPackage};
 use zbus::message::Header;
 use zbus::object_server::SignalEmitter;
@@ -148,7 +148,7 @@ impl Aur {
     #[zbus(signal)]
     pub async fn update(
         signal_emitter: &SignalEmitter<'_>,
-        progress: UpdateProgress,
+        progress: InstallProgress,
     ) -> zbus::Result<()>;
 
     #[zbus(signal)]
