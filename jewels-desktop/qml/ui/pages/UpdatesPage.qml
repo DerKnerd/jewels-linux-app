@@ -9,7 +9,6 @@ Kirigami.ScrollablePage {
     objectName: "UpdatesPage"
     title: "Updates"
     background: Kirigami.Theme.backgroundColor
-    refreshing: updates.refreshing
     supportsRefreshing: true
     onRefreshingChanged: {
         if (refreshing) {
@@ -21,6 +20,9 @@ Kirigami.ScrollablePage {
         id: updates
         Component.onCompleted: updates.refreshCache()
         onUpdateFinishedChanged: updates.refreshCache()
+        onRefreshingChanged: {
+            updatesPage.refreshing = refreshing
+        }
     }
 
     Kirigami.CardsListView {
