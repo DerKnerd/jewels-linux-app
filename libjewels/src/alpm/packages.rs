@@ -61,6 +61,7 @@ pub struct AlpmHelper {
     download_progress_sender: DownloadProgressSender,
     update_progress_sender: UpdateProgressSender,
     log_message_sender: LogMessageSender,
+    max_concurrent: u32,
 }
 
 impl AlpmHelper {
@@ -68,11 +69,13 @@ impl AlpmHelper {
         download_progress_sender: DownloadProgressSender,
         update_progress_sender: UpdateProgressSender,
         log_message_sender: LogMessageSender,
+        max_concurrent: u32,
     ) -> Self {
         Self {
             download_progress_sender,
             update_progress_sender,
             log_message_sender,
+            max_concurrent,
         }
     }
 
@@ -223,6 +226,8 @@ impl AlpmHelper {
         let handle = get_alpm_handle()?;
         let callback = Rc::new(RefCell::new(Callback { failure: None }));
 
+        let max_concurrent = self.max_concurrent;
+
         let self_ref = Arc::new(self);
 
         {
@@ -252,7 +257,7 @@ impl AlpmHelper {
                 self_ref.download_callback(filename.to_string(), download_event.event())
             });
         }
-        handle.set_parallel_downloads(4);
+        handle.set_parallel_downloads(max_concurrent);
 
         clear_stale_pacman_lock()?;
 

@@ -62,6 +62,7 @@ impl AurHelper {
             self.download_progress_sender.clone(),
             self.update_progress_sender.clone(),
             self.log_message_sender.clone(),
+            4,
         );
 
         log::info!("Getting foreign packages...");
@@ -141,6 +142,7 @@ impl AurHelper {
             self.download_progress_sender.clone(),
             self.update_progress_sender.clone(),
             self.log_message_sender.clone(),
+            4,
         );
         let mut packages = tokio::fs::read_dir(JEWELS_PACKAGE_DIR).await?;
         let mut packages_to_install = vec![];

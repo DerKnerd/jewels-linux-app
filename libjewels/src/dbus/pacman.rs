@@ -26,7 +26,7 @@ impl Pacman {
 
         let path = hdr.path().unwrap();
         let emitter = SignalEmitter::new(conn, path.to_string())?;
-        let alpm_helper = AlpmHelper::new(download_tx, progress_tx, log_tx);
+        let alpm_helper = AlpmHelper::new(download_tx, progress_tx, log_tx, 4);
         tokio::spawn(async move {
             loop {
                 tokio::select! {
@@ -57,6 +57,7 @@ impl Pacman {
         &self,
         #[zbus(header)] hdr: Header<'_>,
         #[zbus(signal_emitter)] emitter: SignalEmitter<'_>,
+        max_concurrent: u32,
     ) -> zbus::fdo::Result<()> {
         let conn = emitter.connection();
         let (download_tx, mut download_rx) = tokio::sync::mpsc::channel(16);
@@ -66,7 +67,7 @@ impl Pacman {
 
         let path = hdr.path().unwrap();
         let emitter = SignalEmitter::new(conn, path.to_string())?;
-        let alpm_helper = AlpmHelper::new(download_tx, progress_tx, log_tx);
+        let alpm_helper = AlpmHelper::new(download_tx, progress_tx, log_tx, max_concurrent);
         tokio::spawn(async move {
             loop {
                 tokio::select! {

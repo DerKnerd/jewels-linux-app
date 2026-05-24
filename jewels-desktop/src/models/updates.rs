@@ -274,7 +274,7 @@ impl Updates {
             };
             let aur_packages_count = upgrade_aur_packages.len();
 
-            if pacman.install_updates().await.is_err() {
+            if pacman.install_updates(4).await.is_err() {
                 refresh_status(UpdateStatus::Error);
             }
 

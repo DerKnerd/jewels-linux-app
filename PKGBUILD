@@ -36,7 +36,7 @@ package() {
 
   # binaries
   install -Dm755 "${startdir}/target/release/jewelsd" "${binDir}/jewelsd"
-  install -Dm755 "${startdir}/target/release/jewels-desktop" "${binDir}/jewels-desktop"
+  install -Dm755 "${startdir}/target/release/jewels" "${binDir}/jewels"
 
   # install jewels user
   install -Dm644 "${startdir}/package/sysusers.d/jewels.conf" "${sysusersDir}/jewels.conf"
