@@ -1,6 +1,7 @@
 pub mod aur;
 pub mod pacman;
 mod wireguard;
+pub mod screensaver;
 
 pub use wireguard::*;
 
