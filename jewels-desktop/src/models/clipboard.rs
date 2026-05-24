@@ -1,30 +1,31 @@
-use qmetaobject::{qt_base_class, qt_method, QObject, QString};
 use arboard::Clipboard as Arboard;
+use cxx_qt_lib::QString;
+use std::pin::Pin;
 
-#[allow(non_snake_case)]
-#[derive(QObject)]
-pub struct Clipboard {
-    base: qt_base_class!(trait QObject),
+#[cxx_qt::bridge]
+mod ffi {
+    unsafe extern "C++" {
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+    }
 
-    pub copy: qt_method!(fn copy(&mut self, text: QString) {
-        self.copy_to_clipboard(text.to_string());
-    }),
+    #[auto_cxx_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        type Clipboard = super::ClipboardStruct;
 
-    arboard: Arboard
-}
-
-impl Default for Clipboard {
-    fn default() -> Self {
-        Self {
-            arboard: Arboard::new().unwrap(),
-            base: Default::default(),
-            copy: Default::default(),
-        }
+        #[qinvokable]
+        #[cxx_name = "copyToClipboard"]
+        fn copy_to_clipboard(self: Pin<&mut Self>, text: QString);
     }
 }
 
-impl Clipboard {
-    fn copy_to_clipboard(&mut self, text: String) {
-        self.arboard.set_text(text).unwrap();
+#[derive(Default)]
+pub struct ClipboardStruct {}
+
+impl ffi::Clipboard {
+    fn copy_to_clipboard(self: Pin<&mut Self>, text: QString) {
+        Arboard::new().unwrap().set_text(text.to_string()).unwrap();
     }
 }
