@@ -27,6 +27,9 @@ mod ffi {
 
         #[qinvokable]
         fn login(self: Pin<&mut Self>);
+
+        #[qsignal]
+        fn login_successful(self: Pin<&mut Self>);
     }
 }
 
@@ -54,6 +57,10 @@ impl Default for LoginStruct {
 
 impl ffi::Login {
     fn logout(mut self: Pin<&mut Self>) {
+        if let Some(handle) = self.as_mut().rust_mut().join_handle.take() {
+            handle.abort();
+        }
+
         self.as_mut().set_host("".into());
         self.as_mut().set_token("".into());
         let _ = write_config(JewelsConfiguration::default());
@@ -62,6 +69,10 @@ impl ffi::Login {
     }
 
     fn login(mut self: Pin<&mut Self>) {
+        if let Some(handle) = self.as_mut().rust_mut().join_handle.take() {
+            handle.abort();
+        }
+
         self.as_mut().set_login_in_progress(true);
         let qt_thread = self.qt_thread();
         self.rust_mut().join_handle = Some(tokio::spawn(async move {
@@ -73,6 +84,7 @@ impl ffi::Login {
                     login.as_mut().set_login_in_progress(false);
                     login.as_mut().set_host(config.host.into());
                     login.as_mut().set_token(config.token.into());
+                    login.login_successful();
                 })
                 .unwrap();
             if libjewels::collector::send_device_data().await.is_err() {

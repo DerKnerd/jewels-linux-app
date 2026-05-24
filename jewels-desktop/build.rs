@@ -13,5 +13,6 @@ fn main() {
             .qml_file("qml/ui/pages/UpdatesPage.qml"),
     )
     .file("src/models/login.rs")
+    .file("src/models/jewels.rs")
     .build();
 }

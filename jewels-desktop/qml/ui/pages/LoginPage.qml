@@ -39,7 +39,7 @@ Kirigami.ScrollablePage {
                     visible: !login.loginInProgress
                     onTriggered: {
                         loginMessage.text = "Der Login wurde gestartet, bitte schau in deinem Browser nach."
-                        login.triggerLogin()
+                        login.login()
                     }
                 }
             ]

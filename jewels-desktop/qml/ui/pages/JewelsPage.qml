@@ -50,7 +50,7 @@ Kirigami.ScrollablePage {
         Repeater {
             id: view
 
-            model: jewels.devices
+            model: jewels
             clip: true
             delegate: Kirigami.AbstractCard
             {

@@ -73,21 +73,21 @@ Kirigami.ScrollablePage {
         initialProperties: ({
                 "login": login
             })
-        page: "/cloud/ulbricht/jewels/qml/ui/pages/LoginPage.qml"
+        page: "pages/LoginPage.qml"
         pagePool: mainPagePool
     }
     Kirigami.PagePoolAction {
         id: updateAction
 
         basePage: pageRoot
-        page: "/cloud/ulbricht/jewels/qml/ui/pages/UpdatesPage.qml"
+        page: "pages/UpdatesPage.qml"
         pagePool: mainPagePool
     }
     Kirigami.PagePoolAction {
         id: installAction
 
         basePage: pageRoot
-        page: "/cloud/ulbricht/jewels/qml/ui/pages/InstallPage.qml"
+        page: "pages/InstallPage.qml"
         pagePool: mainPagePool
     }
     Kirigami.PagePoolAction {
@@ -97,7 +97,7 @@ Kirigami.ScrollablePage {
         initialProperties: ({
                 "login": login
             })
-        page: "/cloud/ulbricht/jewels/qml/ui/pages/JewelsPage.qml"
+        page: "pages/JewelsPage.qml"
         pagePool: mainPagePool
     }
     Kirigami.PagePoolAction {
@@ -107,7 +107,7 @@ Kirigami.ScrollablePage {
         initialProperties: ({
                 "login": login
             })
-        page: "/cloud/ulbricht/jewels/qml/ui/pages/TwoFactorPage.qml"
+        page: "pages/TwoFactorPage.qml"
         pagePool: mainPagePool
     }
     ColumnLayout {
