@@ -4,7 +4,7 @@ import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.config as KConfig
-import cloud.ulbricht.jewels
+import cloud.ulbricht.jewels 1.0
 
 Kirigami.ApplicationWindow {
     id: root
