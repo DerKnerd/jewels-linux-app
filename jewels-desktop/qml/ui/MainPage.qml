@@ -84,6 +84,13 @@ Kirigami.ScrollablePage {
         pagePool: mainPagePool
     }
     Kirigami.PagePoolAction {
+        id: installAction
+
+        basePage: pageRoot
+        page: "/cloud/ulbricht/jewels/qml/ui/pages/InstallPage.qml"
+        pagePool: mainPagePool
+    }
+    Kirigami.PagePoolAction {
         id: jewelsAction
 
         basePage: pageRoot
@@ -117,6 +124,10 @@ Kirigami.ScrollablePage {
                 text: "Updates"
             }
             JewelsDelegate {
+                action: installAction
+                text: "Software"
+            }
+            JewelsDelegate {
                 action: jewelsAction
                 text: "Meine Geräte"
                 visible: login.loggedIn && root.pageStack.wideMode
@@ -141,8 +152,13 @@ Kirigami.ScrollablePage {
             }
             JewelsCard {
                 action: updateAction
-                info: "Hier kannst du deinen Laptop aktuell halten. Einfach aufmachen, schauen ob es Updates gibt, installieren und etwas warten. Danach ist dein Laptop auf dem neuesten Stand."
+                info: "Hier kannst du deinen Rechner aktuell halten. Einfach aufmachen, schauen ob es Updates gibt, installieren und etwas warten. Danach ist dein Laptop auf dem neuesten Stand."
                 title: "Updates"
+            }
+            JewelsCard {
+                action: installAction
+                info: "Hier kannst du neue Software installieren. Durchsuche die offiziellen Quellen von Arch Linux und wähle die Programme die du installieren willst."
+                title: "Software"
             }
             JewelsCard {
                 action: jewelsAction

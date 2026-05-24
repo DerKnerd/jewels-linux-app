@@ -12,6 +12,7 @@ depends=(
     "qt6-declarative"
     "qt6-webview"
 )
+options=(!debug)
 
 package() {
   systemdDir="${pkgdir}/usr/lib/systemd/system"

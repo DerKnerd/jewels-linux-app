@@ -10,7 +10,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use zbus::zvariant::Type;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
-pub struct UpdateProgress {
+pub struct InstallProgress {
     pub package: String,
     pub percent: i32,
     pub howmany: usize,
@@ -37,8 +37,20 @@ pub struct UpdatablePackage {
     pub description: String,
 }
 
-pub type UpdateProgressReceiver = Receiver<UpdateProgress>;
-pub type UpdateProgressSender = Sender<UpdateProgress>;
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
+pub struct InstallablePackage {
+    pub name: String,
+    pub version: String,
+    pub description: String,
+}
+
+pub struct Pkg {
+    pub pkg: InstallablePackage,
+    pub install_date: Option<i64>,
+}
+
+pub type InstallProgressReceiver = Receiver<InstallProgress>;
+pub type InstallProgressSender = Sender<InstallProgress>;
 
 pub type DownloadProgressReceiver = Receiver<DownloadProgress>;
 pub type DownloadProgressSender = Sender<DownloadProgress>;
@@ -59,7 +71,7 @@ struct Callback {
 #[derive(Debug, Clone)]
 pub struct AlpmHelper {
     download_progress_sender: DownloadProgressSender,
-    update_progress_sender: UpdateProgressSender,
+    update_progress_sender: InstallProgressSender,
     log_message_sender: LogMessageSender,
     max_concurrent: u32,
 }
@@ -67,7 +79,7 @@ pub struct AlpmHelper {
 impl AlpmHelper {
     pub fn new(
         download_progress_sender: DownloadProgressSender,
-        update_progress_sender: UpdateProgressSender,
+        update_progress_sender: InstallProgressSender,
         log_message_sender: LogMessageSender,
         max_concurrent: u32,
     ) -> Self {
@@ -90,12 +102,13 @@ impl AlpmHelper {
         log::log!(rust_level, "{}", msg.trim_end());
         let sender = self.log_message_sender.clone();
         tokio::spawn(async move {
-            if let Err(err) = sender
-                .send(LogMessage {
-                    message: msg.to_string(),
-                    level: rust_level.to_string(),
-                })
-                .await
+            if !sender.is_closed()
+                && let Err(err) = sender
+                    .send(LogMessage {
+                        message: msg.to_string(),
+                        level: rust_level.to_string(),
+                    })
+                    .await
             {
                 log::error!("Failed to send log progress: {}", err);
             }
@@ -106,14 +119,15 @@ impl AlpmHelper {
         log::info!("{name} {percent}% ({n}/{total})");
         let sender = self.update_progress_sender.clone();
         tokio::spawn(async move {
-            if let Err(err) = sender
-                .send(UpdateProgress {
-                    package: name.to_string(),
-                    percent,
-                    howmany: total,
-                    current: n,
-                })
-                .await
+            if !sender.is_closed()
+                && let Err(err) = sender
+                    .send(InstallProgress {
+                        package: name.to_string(),
+                        percent,
+                        howmany: total,
+                        current: n,
+                    })
+                    .await
             {
                 log::error!("Failed to send update progress: {err}");
             }
@@ -159,13 +173,14 @@ impl AlpmHelper {
             match download_event {
                 DownloadEvent::Progress(evt) => {
                     log::info!("{filename}: {}/{}", evt.downloaded, evt.total);
-                    if let Err(err) = sender
-                        .send(DownloadProgress {
-                            status: evt.downloaded,
-                            total: evt.total,
-                            filename: filename.to_string(),
-                        })
-                        .await
+                    if !sender.is_closed()
+                        && let Err(err) = sender
+                            .send(DownloadProgress {
+                                status: evt.downloaded,
+                                total: evt.total,
+                                filename: filename.to_string(),
+                            })
+                            .await
                     {
                         log::error!("Failed to send download progress: {}", err);
                     }
@@ -173,13 +188,14 @@ impl AlpmHelper {
                 DownloadEvent::Completed(evt) => {
                     if !matches!(evt.result, DownloadResult::Failed) {
                         log::info!("{filename}: {}/{}", evt.total, evt.total);
-                        if let Err(err) = sender
-                            .send(DownloadProgress {
-                                status: evt.total,
-                                total: evt.total,
-                                filename: filename.to_string(),
-                            })
-                            .await
+                        if !sender.is_closed()
+                            && let Err(err) = sender
+                                .send(DownloadProgress {
+                                    status: evt.total,
+                                    total: evt.total,
+                                    filename: filename.to_string(),
+                                })
+                                .await
                         {
                             log::error!("Failed to send download progress: {}", err);
                         }
@@ -333,7 +349,7 @@ impl AlpmHelper {
         Ok(foreign)
     }
 
-    pub fn install_packages(self, package_paths: Vec<String>) -> anyhow::Result<()> {
+    pub fn install_package_paths(self, package_paths: Vec<String>) -> anyhow::Result<()> {
         let (mut handle, ..) = self.get_handle_and_callback()?;
 
         handle.trans_init(TransFlag::empty())?;
@@ -350,5 +366,66 @@ impl AlpmHelper {
         handle.trans_release()?;
 
         Ok(())
+    }
+
+    pub fn install_package_names(self, package_names: Vec<String>) -> anyhow::Result<()> {
+        let (mut handle, callback) = self.clone().get_handle_and_callback()?;
+
+        handle.syncdbs_mut().update(true)?;
+
+        self.resync_keyrings()?;
+
+        handle.trans_init(TransFlag::empty())?;
+
+        for name in package_names {
+            let pkg_name = name.as_str();
+            let pkg = handle
+                .syncdbs()
+                .iter()
+                .find_map(|db| db.pkg(pkg_name).map(|pkg| pkg).ok());
+            if let Some(pkg) = pkg {
+                handle
+                    .trans_add_pkg(pkg)
+                    .map_err(|err| anyhow!(err.to_string()))?;
+            }
+        }
+        if handle.trans_add().is_empty() && handle.trans_remove().is_empty() {
+            handle.trans_release()?;
+
+            Ok(())
+        } else {
+            handle.trans_prepare().map_err(|err| anyhow!(err.error()))?;
+            handle.trans_commit()?;
+
+            handle.trans_release()?;
+
+            if let Some(FailureReason::PackageCorrupted) = callback.clone().borrow().failure {
+                log::error!("Got corrupted packages, resync the keyrings and try again");
+                Err(anyhow!("Corrupted packages"))
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    pub fn search_packages(self, query: String) -> anyhow::Result<Vec<InstallablePackage>> {
+        let (mut handle, ..) = self.get_handle_and_callback()?;
+        handle.syncdbs_mut().update(false)?;
+
+        let dbs = handle.syncdbs();
+        let localdb = handle.localdb();
+
+        let results = dbs
+            .iter()
+            .flat_map(|db| db.search([query.as_str()].iter()))
+            .flat_map(|pkgs| pkgs)
+            .filter(|pkg| localdb.pkg(pkg.name()).is_err())
+            .map(|pkg| InstallablePackage {
+                name: pkg.name().to_string(),
+                version: pkg.version().to_string(),
+                description: pkg.desc().unwrap_or_default().to_string(),
+            })
+            .collect();
+        Ok(results)
     }
 }

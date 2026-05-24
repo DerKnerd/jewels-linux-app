@@ -2,7 +2,7 @@ mod build;
 pub mod consts;
 mod gpg;
 
-use crate::alpm::{AlpmHelper, DownloadProgressSender, LogMessageSender, UpdateProgressSender};
+use crate::alpm::{AlpmHelper, DownloadProgressSender, LogMessageSender, InstallProgressSender};
 use crate::aur::build::AurBuilder;
 use crate::aur::consts::{JEWELS_BUILD_DIR, JEWELS_PACKAGE_DIR, JEWELS_USER};
 use raur::Raur;
@@ -30,7 +30,7 @@ pub type PackageFailedSender = Sender<String>;
 #[derive(Debug, Clone)]
 pub struct AurHelper {
     download_progress_sender: DownloadProgressSender,
-    update_progress_sender: UpdateProgressSender,
+    update_progress_sender: InstallProgressSender,
     log_message_sender: LogMessageSender,
     package_build_started_sender: PackageBuildStartedSender,
     package_built_sender: PackageBuiltSender,
@@ -40,7 +40,7 @@ pub struct AurHelper {
 impl AurHelper {
     pub fn new(
         download_progress_sender: DownloadProgressSender,
-        update_progress_sender: UpdateProgressSender,
+        update_progress_sender: InstallProgressSender,
         log_message_sender: LogMessageSender,
         package_build_started_sender: PackageBuildStartedSender,
         package_built_sender: PackageBuiltSender,
@@ -130,7 +130,6 @@ impl AurHelper {
                     let _ = self.package_failed_sender.send(pkg.name.clone()).await;
                 }
             }
-            break;
         }
 
         Ok(())
@@ -150,7 +149,7 @@ impl AurHelper {
             packages_to_install.push(pkg.path().into_os_string().into_string().unwrap());
         }
 
-        alpm_helper.install_packages(packages_to_install)
+        alpm_helper.install_package_paths(packages_to_install)
     }
 
     pub async fn cleanup(&self) -> anyhow::Result<()> {

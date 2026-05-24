@@ -1,89 +1,18 @@
-use libjewels::alpm::{DownloadProgress, UpdatablePackage, UpdateProgress};
+use crate::models::packages::{DownloadStatus, Package};
+use libjewels::alpm::{DownloadProgress, InstallProgress, UpdatablePackage};
 use libjewels::aur::AurPackage;
 use libjewels::dbus::aur::AurProxy;
+use libjewels::dbus::screensaver::ScreenSaverProxy;
 use libjewels::dbus::{get_bus, pacman::PacmanProxy};
 use notify_rust::{Hint, Notification, Timeout, Urgency};
 use qmetaobject::{
-    QObject, QPointer, SimpleListItem, SimpleListModel, qt_base_class, qt_method, qt_property,
-    qt_signal,
+    QObject, QPointer, SimpleListModel, qt_base_class, qt_method, qt_property, qt_signal,
 };
-use qttypes::{QByteArray, QString, QVariant};
+use qttypes::QString;
 use std::cell::RefCell;
 use tokio::select;
+use zbus::Connection;
 use zbus::export::ordered_stream::OrderedStreamExt;
-
-#[derive(Clone, Default)]
-pub struct Package {
-    name: QString,
-    version: QString,
-    description: QString,
-}
-
-#[allow(non_snake_case)]
-#[derive(QObject, Default)]
-pub struct DownloadStatus {
-    base: qt_base_class!(trait QObject),
-    name: qt_property!(QString; NOTIFY nameChanged),
-    percent: qt_property!(f64; NOTIFY percentChanged),
-    total: qt_property!(f64; NOTIFY totalChanged),
-    current: qt_property!(f64; NOTIFY currentChanged),
-    nameChanged: qt_signal!(),
-    percentChanged: qt_signal!(),
-    totalChanged: qt_signal!(),
-    currentChanged: qt_signal!(),
-}
-
-impl DownloadStatus {
-    pub fn reset(&mut self) {
-        self.name = QString::default();
-        self.percent = 0f64;
-        self.total = 0f64;
-        self.current = 0f64;
-        self.nameChanged();
-        self.percentChanged();
-        self.totalChanged();
-        self.currentChanged();
-    }
-}
-
-impl From<UpdatablePackage> for Package {
-    fn from(updatable: UpdatablePackage) -> Self {
-        Package {
-            name: QString::from(updatable.name),
-            version: QString::from(updatable.new_version),
-            description: QString::from(updatable.description),
-        }
-    }
-}
-
-impl From<AurPackage> for Package {
-    fn from(aur: AurPackage) -> Self {
-        Package {
-            name: QString::from(aur.name),
-            version: QString::from(aur.version),
-            description: QString::from(aur.description),
-        }
-    }
-}
-
-impl SimpleListItem for Package {
-    fn get(&self, role: i32) -> QVariant {
-        match role {
-            0 => self.name.clone().into(),
-            1 => self.version.clone().into(),
-            2 => self.description.clone().into(),
-            _ => QVariant::default(),
-        }
-    }
-
-    fn names() -> Vec<QByteArray> {
-        vec![
-            QByteArray::from("name"),
-            QByteArray::from("version"),
-            QByteArray::from("description"),
-        ]
-    }
-}
 
 #[allow(non_snake_case)]
 #[derive(QObject, Default)]
@@ -136,7 +65,7 @@ pub struct Updates {
 
 enum UpdateStatus {
     Download(DownloadProgress),
-    Update(UpdateProgress),
+    Update(InstallProgress),
     Complete,
     Error,
 }
@@ -165,30 +94,23 @@ impl Updates {
                         let percent = (progress.status as f64 / progress.total as f64) * 100f64;
                         let active_download = download_statuses
                             .iter()
-                            .find(|status| status.borrow().name.to_string() == progress.filename);
+                            .find(|status| status.borrow().name().to_string() == progress.filename);
                         let first_full_download = download_statuses
                             .iter()
-                            .find(|status| status.borrow().total == status.borrow().current);
+                            .find(|status| status.borrow().total() == status.borrow().current());
                         if let Some(download) = active_download {
                             let mut download_ref = download.borrow_mut();
-                            if download_ref.current < progress.status as f64 {
-                                download_ref.percent = percent;
-                                download_ref.total = progress.total as f64;
-                                download_ref.current = progress.status as f64;
-                                download_ref.totalChanged();
-                                download_ref.currentChanged();
-                                download_ref.percentChanged();
+                            if download_ref.current() < progress.status as f64 {
+                                download_ref.set_percent(percent);
+                                download_ref.set_total(progress.total as f64);
+                                download_ref.set_current(progress.status as f64);
                             }
                         } else if let Some(download) = first_full_download {
                             let mut download_ref = download.borrow_mut();
-                            download_ref.percent = percent;
-                            download_ref.total = progress.total as f64;
-                            download_ref.current = progress.status as f64;
-                            download_ref.name = progress.filename.into();
-                            download_ref.totalChanged();
-                            download_ref.currentChanged();
-                            download_ref.percentChanged();
-                            download_ref.nameChanged();
+                            download_ref.set_percent(percent);
+                            download_ref.set_total(progress.total as f64);
+                            download_ref.set_current(progress.status as f64);
+                            download_ref.set_name(progress.filename.into());
                         }
                         updates_ref.downloadFinishedChanged();
                     }
@@ -232,176 +154,39 @@ impl Updates {
             }
         });
         tokio::spawn(async move {
-            let conn = if let Ok(conn) = get_bus().await {
-                conn
-            } else {
-                return;
-            };
-            let pacman = if let Ok(pacman) = PacmanProxy::new(&conn).await {
-                pacman
-            } else {
-                return;
-            };
+            let mut screen_saver_cookie = None;
+            let _ = async  {
+                let session_bus = Connection::session().await?;
+                let screen_saver_proxy = ScreenSaverProxy::new(&session_bus).await?;
+                let cookie = screen_saver_proxy
+                    .inhibit("Jewels Desktop", "Rechner updaten")
+                    .await;
+                screen_saver_cookie = cookie.ok();
+                let conn = get_bus().await?;
+                let pacman = PacmanProxy::new(&conn).await?;
 
-            let mut download = if let Ok(download) = pacman.receive_download().await {
-                download
-            } else {
-                return;
-            };
-            let mut update = if let Ok(update) = pacman.receive_update().await {
-                update
-            } else {
-                return;
-            };
-            let mut failure = if let Ok(failure) = pacman.receive_failure().await {
-                failure
-            } else {
-                return;
-            };
-            let mut finished = if let Ok(finished) = pacman.receive_finished().await {
-                finished
-            } else {
-                return;
-            };
+                let mut download = pacman.receive_download().await?;
+                let mut update = pacman.receive_update().await?;
+                let mut failure = pacman.receive_failure().await?;
+                let mut finished = pacman.receive_finished().await?;
 
-            let aur_proxy = AurProxy::new(&conn).await.ok();
-            let upgrade_aur_packages = if let Some(ref aur_proxy) = aur_proxy
-                && let Ok(upgrade_aur_packages) = aur_proxy.get_available_updates().await
-            {
-                upgrade_aur_packages
-            } else {
-                vec![]
-            };
-            let aur_packages_count = upgrade_aur_packages.len();
+                let aur_proxy = AurProxy::new(&conn).await.ok();
+                let upgrade_aur_packages = if let Some(ref aur_proxy) = aur_proxy
+                    && let Ok(upgrade_aur_packages) = aur_proxy.get_available_updates().await
+                {
+                    upgrade_aur_packages
+                } else {
+                    vec![]
+                };
+                let aur_packages_count = upgrade_aur_packages.len();
 
-            if pacman.install_updates(4).await.is_err() {
-                refresh_status(UpdateStatus::Error);
-            }
-
-            let notify_success = {
-                let refresh_status = refresh_status.clone();
-                || async move {
-                    refresh_status(UpdateStatus::Complete);
-                    let _ = Notification::new()
-                        .summary("Dein Rechner ist aktuell")
-                        .body("Super, die Updates wurden erfolgreich installiert und dein Rechner ist jetzt auf dem neuesten Stand.")
-                        .appname("jewels")
-                        .icon("jewels")
-                        .show_async()
-                        .await;
-                }
-            };
-            let notify_error = {
-                let refresh_status = refresh_status.clone();
-                || async move {
+                if pacman.install_updates(4).await.is_err() {
                     refresh_status(UpdateStatus::Error);
-                    let _ = Notification::new()
-                        .summary("Fehler beim Updaten")
-                        .body("Die Updates haben leider nicht geklappt. Du kannst es noch einmal versuchen, wenn das auch nicht hilft, wende dich an den Support.")
-                        .appname("jewels")
-                        .urgency(Urgency::Critical)
-                        .icon("jewels")
-                        .hint(Hint::Resident(true))
-                        .timeout(Timeout::Never)
-                        .show();
                 }
-            };
-            let update_aur = {
-                let refresh_status = refresh_status.clone();
-                let notify_error = notify_error.clone();
-                let notify_success = notify_success.clone();
 
-                move || async move {
-                    if let Some(aur_proxy) = aur_proxy {
-                        let mut update = if let Ok(update) = aur_proxy.receive_update().await {
-                            update
-                        } else {
-                            return;
-                        };
-                        let mut failure = if let Ok(failure) = aur_proxy.receive_failure().await {
-                            failure
-                        } else {
-                            return;
-                        };
-                        let mut finished = if let Ok(finished) = aur_proxy.receive_finished().await
-                        {
-                            finished
-                        } else {
-                            return;
-                        };
-                        let mut build_started =
-                            if let Ok(build_started) = aur_proxy.receive_build_started().await {
-                                build_started
-                            } else {
-                                return;
-                            };
-                        let mut built = if let Ok(built) = aur_proxy.receive_built().await {
-                            built
-                        } else {
-                            return;
-                        };
-                        let mut failed = if let Ok(failed) = aur_proxy.receive_failed().await {
-                            failed
-                        } else {
-                            return;
-                        };
-
-                        if aur_proxy.install_updates().await.is_err() {
-                            refresh_status(UpdateStatus::Error);
-                        }
-
-                        let mut current_package = 0;
-                        loop {
-                            select! {
-                                Some(signal) = update.next() => {
-                                    if let Ok(args) = signal.args() {
-                                        refresh_status(UpdateStatus::Update(args.progress));
-                                    }
-                                },
-                                Some(signal) = build_started.next() => {
-                                    if let Ok(args) = signal.args() {
-                                        refresh_status(UpdateStatus::Update(UpdateProgress {
-                                            package: args.package.clone(),
-                                            percent: (((aur_packages_count as f64) / (current_package as f64)) * 100f64) as i32,
-                                            howmany: aur_packages_count,
-                                            current: current_package,
-                                        }));
-                                    }
-                                },
-                                Some(signal) = built.next() => {
-                                    if let Ok(args) = signal.args() {
-                                        current_package += 1;
-                                        refresh_status(UpdateStatus::Update(UpdateProgress {
-                                            package: args.package.clone(),
-                                            percent: (((aur_packages_count as f64) / (current_package as f64)) * 100f64) as i32,
-                                            howmany: aur_packages_count,
-                                            current: current_package,
-                                        }));
-                                    }
-                                },
-                                Some(signal) = failed.next() => {
-                                    if let Ok(args) = signal.args() {
-                                        current_package += 1;
-                                        refresh_status(UpdateStatus::Update(UpdateProgress {
-                                            package: args.package.clone(),
-                                            percent: (((aur_packages_count as f64) / (current_package as f64)) * 100f64) as i32,
-                                            howmany: aur_packages_count,
-                                            current: current_package,
-                                        }));
-                                    }
-                                },
-                                Some(_) = finished.next() => {
-                                    notify_success().await;
-                                    break;
-                                }
-                                Some(_) = failure.next() => {
-                                    notify_error().await;
-                                    break;
-                                }
-                                else => break
-                            }
-                        }
-                    } else {
+                let notify_success = {
+                    let refresh_status = refresh_status.clone();
+                    || async move {
                         refresh_status(UpdateStatus::Complete);
                         let _ = Notification::new()
                             .summary("Dein Rechner ist aktuell")
@@ -411,35 +196,168 @@ impl Updates {
                             .show_async()
                             .await;
                     }
-                }
-            };
+                };
+                let notify_error = {
+                    let refresh_status = refresh_status.clone();
+                    || async move {
+                        refresh_status(UpdateStatus::Error);
+                        let _ = Notification::new()
+                            .summary("Fehler beim Updaten")
+                            .body("Die Updates haben leider nicht geklappt. Du kannst es noch einmal versuchen, wenn das auch nicht hilft, wende dich an den Support.")
+                            .appname("jewels")
+                            .urgency(Urgency::Critical)
+                            .icon("jewels")
+                            .hint(Hint::Resident(true))
+                            .timeout(Timeout::Never)
+                            .show();
+                    }
+                };
+                let update_aur = {
+                    let refresh_status = refresh_status.clone();
+                    let notify_error = notify_error.clone();
+                    let notify_success = notify_success.clone();
 
-            loop {
-                select! {
-                    Some(signal) = download.next() => {
-                        if let Ok(args) = signal.args() {
-                            refresh_status(UpdateStatus::Download(args.progress));
-                        }
-                    },
-                    Some(signal) = update.next() => {
-                        if let Ok(args) = signal.args() {
-                            refresh_status(UpdateStatus::Update(args.progress));
-                        }
-                    },
-                    Some(_) = finished.next() => {
-                        if aur_packages_count > 0 {
-                            update_aur().await;
+                    move || async move {
+                        if let Some(aur_proxy) = aur_proxy {
+                            let mut update = if let Ok(update) = aur_proxy.receive_update().await {
+                                update
+                            } else {
+                                return;
+                            };
+                            let mut failure = if let Ok(failure) = aur_proxy.receive_failure().await
+                            {
+                                failure
+                            } else {
+                                return;
+                            };
+                            let mut finished =
+                                if let Ok(finished) = aur_proxy.receive_finished().await {
+                                    finished
+                                } else {
+                                    return;
+                                };
+                            let mut build_started = if let Ok(build_started) =
+                                aur_proxy.receive_build_started().await
+                            {
+                                build_started
+                            } else {
+                                return;
+                            };
+                            let mut built = if let Ok(built) = aur_proxy.receive_built().await {
+                                built
+                            } else {
+                                return;
+                            };
+                            let mut failed = if let Ok(failed) = aur_proxy.receive_failed().await {
+                                failed
+                            } else {
+                                return;
+                            };
+
+                            if aur_proxy.install_updates().await.is_err() {
+                                refresh_status(UpdateStatus::Error);
+                            }
+
+                            let mut current_package = 0;
+                            loop {
+                                select! {
+                                    Some(signal) = update.next() => {
+                                        if let Ok(args) = signal.args() {
+                                            refresh_status(UpdateStatus::Update(args.progress));
+                                        }
+                                    },
+                                    Some(signal) = build_started.next() => {
+                                        if let Ok(args) = signal.args() {
+                                            refresh_status(UpdateStatus::Update(InstallProgress {
+                                                package: args.package.clone(),
+                                                percent: (((aur_packages_count as f64) / (current_package as f64)) * 100f64) as i32,
+                                                howmany: aur_packages_count,
+                                                current: current_package,
+                                            }));
+                                        }
+                                    },
+                                    Some(signal) = built.next() => {
+                                        if let Ok(args) = signal.args() {
+                                            current_package += 1;
+                                            refresh_status(UpdateStatus::Update(InstallProgress {
+                                                package: args.package.clone(),
+                                                percent: (((aur_packages_count as f64) / (current_package as f64)) * 100f64) as i32,
+                                                howmany: aur_packages_count,
+                                                current: current_package,
+                                            }));
+                                        }
+                                    },
+                                    Some(signal) = failed.next() => {
+                                        if let Ok(args) = signal.args() {
+                                            current_package += 1;
+                                            refresh_status(UpdateStatus::Update(InstallProgress {
+                                                package: args.package.clone(),
+                                                percent: (((aur_packages_count as f64) / (current_package as f64)) * 100f64) as i32,
+                                                howmany: aur_packages_count,
+                                                current: current_package,
+                                            }));
+                                        }
+                                    },
+                                    Some(_) = finished.next() => {
+                                        notify_success().await;
+                                        break;
+                                    }
+                                    Some(_) = failure.next() => {
+                                        notify_error().await;
+                                        break;
+                                    }
+                                    else => break
+                                }
+                            }
                         } else {
-                            notify_success().await;
+                            refresh_status(UpdateStatus::Complete);
+                            let _ = Notification::new()
+                                .summary("Dein Rechner ist aktuell")
+                                .body("Super, die Updates wurden erfolgreich installiert und dein Rechner ist jetzt auf dem neuesten Stand.")
+                                .appname("jewels")
+                                .icon("jewels")
+                                .show_async()
+                                .await;
                         }
-                        break;
                     }
-                    Some(_) = failure.next() => {
-                        notify_error().await;
-                        break;
+                };
+
+                loop {
+                    select! {
+                        Some(signal) = download.next() => {
+                            if let Ok(args) = signal.args() {
+                                refresh_status(UpdateStatus::Download(args.progress));
+                            }
+                        },
+                        Some(signal) = update.next() => {
+                            if let Ok(args) = signal.args() {
+                                refresh_status(UpdateStatus::Update(args.progress));
+                            }
+                        },
+                        Some(_) = finished.next() => {
+                            if aur_packages_count > 0 {
+                                update_aur().await;
+                            } else {
+                                notify_success().await;
+                            }
+                            break;
+                        }
+                        Some(_) = failure.next() => {
+                            notify_error().await;
+                            break;
+                        }
+                        else => break
                     }
-                    else => break
                 }
+
+                Ok(()) as zbus::Result<()>
+            }.await;
+
+            if let Ok(session_bus) = Connection::session().await
+                && let Ok(screen_saver_proxy) = ScreenSaverProxy::new(&session_bus).await
+                && let Some(cookie) = screen_saver_cookie
+            {
+                let _ = screen_saver_proxy.uninhibit(cookie).await;
             }
         });
     }

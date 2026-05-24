@@ -1,4 +1,4 @@
-use crate::models::{Clipboard, Jewels, Login, OneTimePasswords, Otp, Owners, Updates};
+use crate::models::{Clipboard, Install, Jewels, Login, OneTimePasswords, Otp, Owners, Updates};
 use cstr::cstr;
 use libjewels::configuration::load_config;
 use libjewels::dbus::{WireguardProxy, get_bus};
@@ -15,6 +15,7 @@ qrc!(pages,
     "cloud/ulbricht/jewels" {
         "qml/ui/MainApp.qml",
         "qml/ui/MainPage.qml",
+        "qml/ui/pages/InstallPage.qml",
         "qml/ui/pages/JewelsPage.qml",
         "qml/ui/pages/LoginPage.qml",
         "qml/ui/pages/UpdatesPage.qml",
@@ -28,6 +29,7 @@ pub fn register_qml_types() {
     qml_register_type::<Jewels>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Jewels"));
     qml_register_type::<Login>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Login"));
     qml_register_type::<Updates>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Updates"));
+    qml_register_type::<Install>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Install"));
     qml_register_type::<OneTimePasswords>(
         cstr!("cloud.ulbricht.jewels"),
         1,
