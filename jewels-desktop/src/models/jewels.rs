@@ -52,43 +52,37 @@ mod ffi {
     }
 
     #[auto_cxx_name]
+    #[auto_rust_name]
     unsafe extern "RustQt" {
         #[qobject]
         #[qml_element]
         #[base = QAbstractListModel]
-        #[qproperty(bool, is_loading, cxx_name = "isLoading")]
-        #[qproperty(bool, loading_failed, cxx_name = "loadingFailed")]
+        #[qproperty(bool, is_loading)]
+        #[qproperty(bool, loading_failed)]
         type Jewels = super::JewelsStruct;
 
         #[cxx_override]
-        #[rust_name = "row_count"]
         fn rowCount(&self, parent: &QModelIndex) -> i32;
 
         #[cxx_override]
         fn data(&self, index: &QModelIndex, role: i32) -> QVariant;
 
         #[cxx_override]
-        #[rust_name = "role_names"]
         fn roleNames(&self) -> QHash_i32_QByteArray;
 
         #[inherit]
-        #[rust_name = "begin_reset_model"]
         fn beginResetModel(self: Pin<&mut Self>);
 
         #[inherit]
-        #[rust_name = "end_reset_model"]
         fn endResetModel(self: Pin<&mut Self>);
 
         #[qinvokable]
-        #[rust_name = "send_data"]
         fn sendData(&self);
 
         #[qinvokable]
-        #[rust_name = "check_eol_devices"]
         fn checkEolDevices(&self);
 
         #[qinvokable]
-        #[rust_name = "load_devices"]
         fn loadDevices(self: Pin<&mut Self>);
     }
 }
@@ -205,12 +199,10 @@ impl ffi::Jewels {
                     jewels.as_mut().set_is_loading(false);
                     jewels.as_mut().set_loading_failed(loading_failed);
                     jewels.as_mut().begin_reset_model();
-                    jewels.as_mut().rust_mut().devices.clear();
-                    let mut devices = devices
+                    jewels.as_mut().rust_mut().devices = devices
                         .into_iter()
                         .map(Into::into)
                         .collect::<Vec<DeviceStruct>>();
-                    jewels.as_mut().rust_mut().devices.append(&mut devices);
                     jewels.as_mut().end_reset_model();
                 })
                 .unwrap();

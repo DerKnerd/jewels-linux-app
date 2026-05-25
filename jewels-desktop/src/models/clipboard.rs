@@ -13,6 +13,7 @@ mod ffi {
     unsafe extern "RustQt" {
         #[qobject]
         #[qml_element]
+        #[qml_singleton]
         type Clipboard = super::ClipboardStruct;
 
         #[qinvokable]

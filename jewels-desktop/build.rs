@@ -12,8 +12,11 @@ fn main() {
             .qml_file("qml/ui/pages/TwoFactorPage.qml")
             .qml_file("qml/ui/pages/UpdatesPage.qml"),
     )
-    .file("src/models/login.rs")
+    .file("src/models/clipboard.rs")
     .file("src/models/jewels.rs")
+    .file("src/models/login.rs")
+    .file("src/models/otp.rs")
     .file("src/models/owners.rs")
+    .file("src/models/two_factor.rs")
     .build();
 }

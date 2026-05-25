@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
+import org.kde.kitemmodels as KItemModels
 import cloud.ulbricht.jewels
 
 Kirigami.ScrollablePage {
@@ -92,49 +93,52 @@ Kirigami.ScrollablePage {
             }
         }
         Repeater {
-            model: oneTimePasswords.sharedOneTimePasswords
+            model: oneTimePasswords.sharedByNames
 
             delegate: ColumnLayout {
-                required property var modelData
+                required property string modelData
 
-                Layout.fillHeight: true
                 Layout.fillWidth: true
                 spacing: Kirigami.Units.largeSpacing
 
                 Kirigami.Heading {
                     level: 1
-                    text: `Geteilt von ${modelData.name}`
+                    text: `Geteilt von ${modelData}`
                 }
+
                 Flow {
-                    Layout.fillHeight: true
                     Layout.fillWidth: true
                     spacing: Kirigami.Units.largeSpacing
 
                     Repeater {
-                        model: modelData.otpCodes
+                        model: KItemModels.KSortFilterProxyModel
+                        {
+                            sourceModel: oneTimePasswords.sharedOneTimePasswords
+                            filterRoleName: "sharedByName"
+                            filterString: modelData
+                        }
 
                         delegate: Item {
-                            property var rAccountIssuer: modelData.accountIssuer
-                            property var rAccountName: modelData.accountName
-                            property var rCanEdit: modelData.canEdit
-                            property var rIconSource: modelData.iconSource
-                            property var rOtpId: modelData.otpId
-                            property var rSecretKey: modelData.secretKey
+                            required property int otpId
+                            required property string accountName
+                            required property string accountIssuer
+                            required property string secretKey
+                            required property bool canEdit
+                            required property string iconSource
 
                             height: card.height
                             width: card.width
 
                             TotpCard {
                                 id: card
-
-                                accountIssuer: parent.rAccountIssuer
-                                accountName: parent.rAccountName
+                                accountIssuer: accountIssuer
+                                accountName: accountName
                                 canEdit: false
                                 host: login.host
-                                iconSource: parent.rIconSource
-                                otpId: parent.rOtpId
-                                secretKey: parent.rSecretKey
-                                sharedWithEmails: parent.rSharedWithEmails
+                                iconSource: iconSource
+                                otpId: otpId
+                                secretKey: secretKey
+                                sharedWithEmails: []
                             }
                         }
                     }
@@ -154,6 +158,7 @@ Kirigami.ScrollablePage {
                 shareDialog.sharedWithEmails = shareDialog.sharedWithEmails.concat([email]);
             }
         }
+
         function removeEmail(email) {
             shareDialog.sharedWithEmails = shareDialog.sharedWithEmails.filter(e => e !== email);
         }
@@ -161,7 +166,8 @@ Kirigami.ScrollablePage {
         standardButtons: Kirigami.Dialog.NoButton
         title: "Teilen mit…"
 
-        contentItem: Controls.ScrollView {
+        contentItem: Controls.ScrollView
+        {
             Component.onCompleted: background.visible = true
 
             ListView {
@@ -169,10 +175,11 @@ Kirigami.ScrollablePage {
 
                 clip: true
                 height: Math.min(contentHeight, 400)
-                model: Owners.owners
+                model: Owners
                 width: parent.width
 
-                delegate: Controls.SwitchDelegate {
+                delegate: Controls.SwitchDelegate
+                {
                     checked: shareDialog.sharedWithEmails.indexOf(email) !== -1
                     text: name
                     width: ListView.view.width - ListView.view.leftMargin - ListView.view.rightMargin

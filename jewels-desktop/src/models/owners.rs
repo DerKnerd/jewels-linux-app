@@ -1,7 +1,6 @@
 use crate::api;
 use cxx_qt::{CxxQtType, Threading};
 use cxx_qt_lib::{QModelIndex, QString, QVariant};
-use std::pin::Pin;
 
 #[cxx_qt::bridge]
 mod ffi {
@@ -33,44 +32,43 @@ mod ffi {
     impl cxx_qt::Threading for Owners {}
 
     #[auto_cxx_name]
+    #[auto_rust_name]
     unsafe extern "RustQt" {
         #[qobject]
         #[qml_element]
         #[qproperty(QString, name)]
         #[qproperty(QString, email)]
-        #[qproperty(bool, is_admin, cxx_name = "isAdmin")]
-        #[qproperty(QString, profile_picture, cxx_name = "profilePicture")]
+        #[qproperty(bool, is_admin)]
+        #[qproperty(QString, profile_picture)]
         type Owner = super::OwnerStruct;
     }
 
     #[auto_cxx_name]
+    #[auto_rust_name]
     unsafe extern "RustQt" {
         #[qobject]
         #[qml_element]
+        #[qml_singleton]
         #[base = QAbstractListModel]
         type Owners = super::OwnersStruct;
 
         #[cxx_override]
-        #[rust_name = "row_count"]
         fn rowCount(&self, parent: &QModelIndex) -> i32;
 
         #[cxx_override]
         fn data(&self, index: &QModelIndex, role: i32) -> QVariant;
 
         #[cxx_override]
-        #[rust_name = "role_names"]
         fn roleNames(&self) -> QHash_i32_QByteArray;
 
         #[inherit]
-        #[rust_name = "begin_reset_model"]
         fn beginResetModel(self: Pin<&mut Self>);
 
         #[inherit]
-        #[rust_name = "end_reset_model"]
         fn endResetModel(self: Pin<&mut Self>);
 
         #[qinvokable]
-        fn load(self: Pin<&mut Self>);
+        fn load(&self);
     }
 }
 
@@ -143,12 +141,10 @@ impl ffi::Owners {
             qt_thread
                 .queue(move |mut owners| {
                     owners.as_mut().begin_reset_model();
-                    owners.as_mut().rust_mut().owners.clear();
-                    let mut data = data
+                    owners.as_mut().rust_mut().owners = data
                         .into_iter()
                         .map(Into::into)
                         .collect::<Vec<OwnerStruct>>();
-                    owners.as_mut().rust_mut().owners.append(&mut data);
                     owners.as_mut().end_reset_model();
                 })
                 .unwrap();
