@@ -1,9 +1,9 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
+import cloud.ulbricht.jewels
 import org.kde.kirigami as Kirigami
 import org.kde.kitemmodels as KItemModels
-import cloud.ulbricht.jewels
 
 Kirigami.ScrollablePage {
     id: twoFactorPage
@@ -105,32 +105,25 @@ Kirigami.ScrollablePage {
                     level: 1
                     text: `Geteilt von ${modelData}`
                 }
-
                 Flow {
                     Layout.fillWidth: true
                     spacing: Kirigami.Units.largeSpacing
 
                     Repeater {
-                        model: KItemModels.KSortFilterProxyModel
-                        {
-                            sourceModel: oneTimePasswords.sharedOneTimePasswords
-                            filterRoleName: "sharedByName"
-                            filterString: modelData
-                        }
-
                         delegate: Item {
-                            required property int otpId
-                            required property string accountName
                             required property string accountIssuer
-                            required property string secretKey
+                            required property string accountName
                             required property bool canEdit
                             required property string iconSource
+                            required property int otpId
+                            required property string secretKey
 
                             height: card.height
                             width: card.width
 
                             TotpCard {
                                 id: card
+
                                 accountIssuer: accountIssuer
                                 accountName: accountName
                                 canEdit: false
@@ -140,6 +133,11 @@ Kirigami.ScrollablePage {
                                 secretKey: secretKey
                                 sharedWithEmails: []
                             }
+                        }
+                        model: KItemModels.KSortFilterProxyModel {
+                            filterRoleName: "sharedByName"
+                            filterString: modelData
+                            sourceModel: oneTimePasswords.sharedOneTimePasswords
                         }
                     }
                 }
@@ -158,7 +156,6 @@ Kirigami.ScrollablePage {
                 shareDialog.sharedWithEmails = shareDialog.sharedWithEmails.concat([email]);
             }
         }
-
         function removeEmail(email) {
             shareDialog.sharedWithEmails = shareDialog.sharedWithEmails.filter(e => e !== email);
         }
@@ -166,8 +163,7 @@ Kirigami.ScrollablePage {
         standardButtons: Kirigami.Dialog.NoButton
         title: "Teilen mit…"
 
-        contentItem: Controls.ScrollView
-        {
+        contentItem: Controls.ScrollView {
             Component.onCompleted: background.visible = true
 
             ListView {
@@ -178,8 +174,7 @@ Kirigami.ScrollablePage {
                 model: Owners
                 width: parent.width
 
-                delegate: Controls.SwitchDelegate
-                {
+                delegate: Controls.SwitchDelegate {
                     checked: shareDialog.sharedWithEmails.indexOf(email) !== -1
                     text: name
                     width: ListView.view.width - ListView.view.leftMargin - ListView.view.rightMargin

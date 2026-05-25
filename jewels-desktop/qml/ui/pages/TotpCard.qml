@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
+import org.kde.kirigami as Kirigami
 
 Kirigami.AbstractCard {
     id: card
@@ -99,8 +99,8 @@ Kirigami.AbstractCard {
                 }
 
                 Layout.fillWidth: true
-                from: 0
                 to: 30
+                from: 0
                 visible: false
 
                 Component.onCompleted: resync()
@@ -124,7 +124,7 @@ Kirigami.AbstractCard {
                     fillMode: Image.PreserveAspectFit
                     height: Kirigami.Units.gridUnit * 3
                     smooth: true
-                    source: `${host}${iconSource}`
+                    `${host}${iconSource}`
                     sourceSize: Qt.size(width * Screen.devicePixelRatio * 2, height * Screen.devicePixelRatio * 2)
                     width: Kirigami.Units.gridUnit * 3
                 }

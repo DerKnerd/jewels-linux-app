@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
+import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: pageRoot
@@ -24,16 +24,13 @@ Kirigami.ScrollablePage {
 
             onTriggered: {
                 login.logout();
-
                 const stack = applicationWindow().pageStack;
                 const current = stack.currentItem;
-
                 const onUpdatesPage = current && current.objectName === "UpdatesPage";
-                if (!onUpdatesPage && stack.depth > 1) {
+                if (!onUpdatesPage && stack.depth > 1)
                     stack.replace(Qt.resolvedUrl("pages/LoginPage.qml"), {
-                        login: login
+                        "login": login
                     });
-                }
             }
         }
     ]
@@ -43,18 +40,6 @@ Kirigami.ScrollablePage {
         color: Kirigami.Theme.backgroundColor
     }
 
-    Jewels {
-        id: jewels
-    }
-
-    Connections {
-        target: login
-        function onLoginSuccessful() {
-            jewels.sendData();
-            jewels.checkEolDevices();
-        }
-    }
-
     Component.onCompleted: {
         if (login.loggedIn) {
             jewels.sendData();
@@ -62,10 +47,20 @@ Kirigami.ScrollablePage {
         }
     }
 
+    Jewels {
+        id: jewels
+    }
+    Connections {
+        function onLoginSuccessful() {
+            jewels.sendData();
+            jewels.checkEolDevices();
+        }
+
+        target: login
+    }
     Kirigami.PagePool {
         id: mainPagePool
     }
-
     Kirigami.PagePoolAction {
         id: loginAction
 

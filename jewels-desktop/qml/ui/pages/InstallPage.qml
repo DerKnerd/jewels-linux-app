@@ -1,19 +1,15 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
+import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
-    Install {
-        id: install
-        Component.onCompleted: install.search("")
-    }
-
     id: installPage
+
+    background: Kirigami.Theme.backgroundColor
     objectName: "InstallPage"
     title: "Software installieren"
-    background: Kirigami.Theme.backgroundColor
 
     actions: [
         Kirigami.Action {
@@ -22,25 +18,32 @@ Kirigami.ScrollablePage {
             onTriggered: installConfirm.open()
         }
     ]
-
-    header: Controls.ToolBar
-    {
+    header: Controls.ToolBar {
         id: toolbar
+
         RowLayout {
             anchors.fill: parent
+
             Kirigami.SearchField {
                 id: searchField
-                delaySearch: true
 
-                placeholderText: "Software durchsuchen"
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillWidth: true
+                delaySearch: true
+                placeholderText: "Software durchsuchen"
 
-                onAccepted: { install.search(searchField.text) }
+                onAccepted: {
+                    install.search(searchField.text);
+                }
             }
         }
     }
 
+    Install {
+        id: install
+
+        Component.onCompleted: install.search("")
+    }
     ColumnLayout {
         anchors.fill: parent
         spacing: Kirigami.Units.largeSpacing
@@ -51,17 +54,16 @@ Kirigami.ScrollablePage {
             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
             visible: install.refreshing
         }
-
         GridLayout {
             Layout.alignment: Qt.AlignTop
-            columns: 3
-            visible: install.installInProgress
-            rowSpacing: Kirigami.Units.smallSpacing
             columnSpacing: Kirigami.Units.smallSpacing
+            columns: 3
+            rowSpacing: Kirigami.Units.smallSpacing
+            visible: install.installInProgress
 
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: install.downloadStatus1.name
                 visible: install.installInProgress && !install.downloadFinished
@@ -78,10 +80,9 @@ Kirigami.ScrollablePage {
                 text: `${install.downloadStatus1.percent.toFixed(0)} %`
                 visible: install.installInProgress && !install.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: install.downloadStatus2.name
                 visible: install.installInProgress && !install.downloadFinished
@@ -98,10 +99,9 @@ Kirigami.ScrollablePage {
                 text: `${install.downloadStatus2.percent.toFixed(0)} %`
                 visible: install.installInProgress && !install.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: install.downloadStatus3.name
                 visible: install.installInProgress && !install.downloadFinished
@@ -118,10 +118,9 @@ Kirigami.ScrollablePage {
                 text: `${install.downloadStatus3.percent.toFixed(0)} %`
                 visible: install.installInProgress && !install.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: install.downloadStatus4.name
                 visible: install.installInProgress && !install.downloadFinished
@@ -138,10 +137,9 @@ Kirigami.ScrollablePage {
                 text: `${install.downloadStatus4.percent.toFixed(0)} %`
                 visible: install.installInProgress && !install.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: install.installPackage
                 visible: install.installInProgress && install.downloadFinished
@@ -158,59 +156,57 @@ Kirigami.ScrollablePage {
                 visible: install.installInProgress && install.downloadFinished
             }
         }
-
         ListView {
             id: view
+
             Layout.fillHeight: true
             Layout.fillWidth: true
+            model: install
             spacing: Kirigami.Units.largeSpacing
 
-            model: install
-            delegate: Kirigami.AbstractCard
-            {
-                header: GridLayout {
-                    columns: 2
-
-                    Kirigami.Heading {
-                        text: name
-                        level: 2
-                    }
-                    Controls.Label {
-                        Layout.alignment: Qt.AlignRight
-                        text: version
-                        opacity: 0.5
-                        wrapMode: Text.WordWrap
-                    }
-                }
-
-                contentItem: Controls.Label
-                {
+            delegate: Kirigami.AbstractCard {
+                contentItem: Controls.Label {
                     text: description
                     wrapMode: Text.WordWrap
                 }
-
-                footer: Kirigami.ActionToolBar
-                {
+                footer: Kirigami.ActionToolBar {
                     id: actionsToolBar
+
                     position: Controls.ToolBar.Footer
+
                     actions: [
                         Kirigami.Action {
-                            text: "Hinzufügen"
-                            icon.name: "add"
                             checkable: true
+                            icon.name: "add"
+                            text: "Hinzufügen"
+
                             onToggled: install.togglePackage(name)
                         }
                     ]
                 }
+                header: GridLayout {
+                    columns: 2
+
+                    Kirigami.Heading {
+                        level: 2
+                        text: name
+                    }
+                    Controls.Label {
+                        Layout.alignment: Qt.AlignRight
+                        opacity: 0.5
+                        text: version
+                        wrapMode: Text.WordWrap
+                    }
+                }
             }
         }
     }
-
     Kirigami.PromptDialog {
         id: installConfirm
-        title: "Software installieren?"
-        subtitle: "Wenn du auf OK klickst wird die von dir gewählte Software installiert."
+
         standardButtons: Kirigami.Dialog.Ok | Kirigami.Dialog.Cancel
+        subtitle: "Wenn du auf OK klickst wird die von dir gewählte Software installiert."
+        title: "Software installieren?"
 
         onAccepted: install.performInstall()
     }

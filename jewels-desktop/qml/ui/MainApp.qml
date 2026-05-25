@@ -2,12 +2,17 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
+import cloud.ulbricht.jewels
 import org.kde.kirigami as Kirigami
-import org.kde.config as KConfig
-import cloud.ulbricht.jewels 1.0
 
 Kirigami.ApplicationWindow {
     id: root
+
+    height: Kirigami.Units.gridUnit * 40
+    minimumHeight: Kirigami.Units.gridUnit * 20
+    minimumWidth: Kirigami.Units.gridUnit * 20
+    title: "Jewels"
+    width: Kirigami.Units.gridUnit * 65
 
     Login {
         id: login
@@ -16,21 +21,13 @@ Kirigami.ApplicationWindow {
             Owners.load();
         }
     }
-
-    minimumHeight: Kirigami.Units.gridUnit * 20
-    minimumWidth: Kirigami.Units.gridUnit * 20
-    height: Kirigami.Units.gridUnit * 40
-    width: Kirigami.Units.gridUnit * 65
-
-    title: "Jewels"
-
     pageStack {
-        initialPage: mainPageComponent
         columnView.columnResizeMode: pageStack.wideMode ? Kirigami.ColumnView.DynamicColumns : Kirigami.ColumnView.SingleColumn
+        initialPage: mainPageComponent
     }
-
     Component {
         id: mainPageComponent
+
         MainPage {
             login: login
         }

@@ -1,27 +1,28 @@
 import QtQuick
 import QtQuick.Controls as Controls
 import QtQuick.Layouts
-import org.kde.kirigami as Kirigami
 import cloud.ulbricht.jewels
+import org.kde.kirigami as Kirigami
 
 Kirigami.ScrollablePage {
     id: updatesPage
+
+    background: Kirigami.Theme.backgroundColor
     objectName: "UpdatesPage"
     title: "Updates"
-    background: Kirigami.Theme.backgroundColor
 
     Updates {
         id: updates
+
         Component.onCompleted: updates.refreshCache()
-        onUpdateFinishedChanged: updates.refreshCache()
         onDownloadFinishedChanged: {
             updates.downloadStatus1.reset();
             updates.downloadStatus2.reset();
             updates.downloadStatus3.reset();
             updates.downloadStatus4.reset();
         }
+        onUpdateFinishedChanged: updates.refreshCache()
     }
-
     ColumnLayout {
         anchors.fill: parent
         spacing: Kirigami.Units.largeSpacing
@@ -31,17 +32,16 @@ Kirigami.ScrollablePage {
             Layout.fillWidth: true
             text: "Verfügbare Updates"
         }
-
         Controls.BusyIndicator {
             id: updatesBusyIndicator
 
             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
             visible: updates.refreshing
         }
-
         Kirigami.InlineMessage {
-            Layout.alignment: Qt.AlignTop
             id: updatesMessage
+
+            Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
             text: `Du hast aktuell ${updates.updateCount} verfügbare Updates.`
             visible: updates.updateCount > 0 && !updates.refreshing
@@ -50,59 +50,58 @@ Kirigami.ScrollablePage {
                 Kirigami.Action {
                     text: "Jetzt aktualisieren"
                     visible: !updates.updateInProgress
+
                     onTriggered: {
-                        updatesMessage.text =
-                            "Die Updates werden installiert. Bitte warte ein bisschen, " +
-                            "du siehst unten den Fortschritt.";
+                        updatesMessage.text = "Die Updates werden installiert. Bitte warte ein bisschen, " + "du siehst unten den Fortschritt.";
                         updates.updateSystem();
                     }
                 }
             ]
         }
-
         Kirigami.InlineMessage {
-            Layout.alignment: Qt.AlignTop
             id: noUpdatesMessage
+
+            Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
             text: "Super, dein Rechner ist aktuell. Es gibt nichts zu tun."
-            visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
             type: Kirigami.MessageType.Positive
+            visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
 
             actions: [
                 Kirigami.Action {
                     text: "Such nochmal"
+
                     onTriggered: updates.refreshCache()
                 }
             ]
         }
-
         Kirigami.InlineMessage {
-            Layout.alignment: Qt.AlignTop
             id: refreshFailedMessage
+
+            Layout.alignment: Qt.AlignTop
             Layout.fillWidth: true
-            visible: updates.refreshingFailed && !updates.refreshing
+            text: "Leider konnten die neuesten Updates nicht abgerufen werden. " + "Du kannst es jederzeit erneut versuchen."
             type: Kirigami.MessageType.Error
-            text: "Leider konnten die neuesten Updates nicht abgerufen werden. " +
-                "Du kannst es jederzeit erneut versuchen."
+            visible: updates.refreshingFailed && !updates.refreshing
 
             actions: [
                 Kirigami.Action {
                     text: "Erneut versuchen"
+
                     onTriggered: updates.refreshCache()
                 }
             ]
         }
-
         GridLayout {
             Layout.alignment: Qt.AlignTop
-            columns: 3
-            visible: updates.updateInProgress || !updates.downloadFinished
-            rowSpacing: Kirigami.Units.smallSpacing
             columnSpacing: Kirigami.Units.smallSpacing
+            columns: 3
+            rowSpacing: Kirigami.Units.smallSpacing
+            visible: updates.updateInProgress || !updates.downloadFinished
 
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: updates.downloadStatus1.name
                 visible: updates.updateInProgress && !updates.downloadFinished
@@ -119,10 +118,9 @@ Kirigami.ScrollablePage {
                 text: `${updates.downloadStatus1.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: updates.downloadStatus2.name
                 visible: updates.updateInProgress && !updates.downloadFinished
@@ -139,10 +137,9 @@ Kirigami.ScrollablePage {
                 text: `${updates.downloadStatus2.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: updates.downloadStatus3.name
                 visible: updates.updateInProgress && !updates.downloadFinished
@@ -159,10 +156,9 @@ Kirigami.ScrollablePage {
                 text: `${updates.downloadStatus3.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: updates.downloadStatus4.name
                 visible: updates.updateInProgress && !updates.downloadFinished
@@ -179,10 +175,9 @@ Kirigami.ScrollablePage {
                 text: `${updates.downloadStatus4.percent.toFixed(0)} %`
                 visible: updates.updateInProgress && !updates.downloadFinished
             }
-
             Controls.Label {
-                Layout.minimumWidth: 150
                 Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: updates.installPackage
                 visible: updates.updateInProgress && updates.downloadFinished
@@ -199,42 +194,38 @@ Kirigami.ScrollablePage {
                 visible: updates.updateInProgress && updates.downloadFinished
             }
         }
-
         Item {
-            Layout.fillWidth: true
             Layout.fillHeight: true
+            Layout.fillWidth: true
             Layout.verticalStretchFactor: 1
             visible: updates.updateCount === 0
         }
-
         ListView {
             id: view
+
             Layout.fillHeight: true
             Layout.fillWidth: true
+            model: updates
             spacing: Kirigami.Units.largeSpacing
 
-            model: updates
-            delegate: Kirigami.AbstractCard
-            {
+            delegate: Kirigami.AbstractCard {
+                contentItem: Controls.Label {
+                    text: description
+                    wrapMode: Text.WordWrap
+                }
                 header: GridLayout {
                     columns: 2
 
                     Kirigami.Heading {
-                        text: name
                         level: 2
+                        text: name
                     }
                     Controls.Label {
                         Layout.alignment: Qt.AlignRight
-                        text: version
                         opacity: 0.5
+                        text: version
                         wrapMode: Text.WordWrap
                     }
-                }
-
-                contentItem: Controls.Label
-                {
-                    text: description
-                    wrapMode: Text.WordWrap
                 }
             }
         }
