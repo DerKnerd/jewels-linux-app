@@ -13,6 +13,7 @@ fn main() {
             .qml_file("qml/ui/pages/UpdatesPage.qml"),
     )
     .file("src/models/clipboard.rs")
+    .file("src/models/install.rs")
     .file("src/models/jewels.rs")
     .file("src/models/login.rs")
     .file("src/models/otp.rs")

@@ -207,11 +207,13 @@ Kirigami.ScrollablePage {
             visible: updates.updateCount === 0
         }
 
-        Repeater {
+        ListView {
             id: view
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.largeSpacing
 
             model: updates
-
             delegate: Kirigami.AbstractCard
             {
                 header: GridLayout {

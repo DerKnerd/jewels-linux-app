@@ -27,6 +27,13 @@ async fn refresh_aur_packages_async() -> zbus::Result<Vec<AurPackage>> {
     aur.get_available_updates().await.map_err(Into::into)
 }
 
+enum UpdateStatus {
+    Download(DownloadProgress),
+    Update(InstallProgress),
+    Complete,
+    Error,
+}
+
 #[cxx_qt::bridge]
 mod ffi {
     unsafe extern "C++" {
@@ -50,7 +57,7 @@ mod ffi {
     unsafe extern "C++" {
         include!("cxx-qt-lib/common.h");
 
-        #[rust_name = "new_download_status"]
+        #[rust_name = "new_update_download_status"]
         fn new_ptr() -> *mut UpdateDownloadStatus;
     }
 
@@ -170,23 +177,16 @@ impl ffi::UpdateDownloadStatus {
     }
 }
 
-enum UpdateStatus {
-    Download(DownloadProgress),
-    Update(InstallProgress),
-    Complete,
-    Error,
-}
-
 impl cxx_qt::Initialize for ffi::Updates {
     fn initialize(mut self: Pin<&mut Self>) {
         self.as_mut()
-            .set_download_status_1(ffi::new_download_status());
+            .set_download_status_1(ffi::new_update_download_status());
         self.as_mut()
-            .set_download_status_2(ffi::new_download_status());
+            .set_download_status_2(ffi::new_update_download_status());
         self.as_mut()
-            .set_download_status_3(ffi::new_download_status());
+            .set_download_status_3(ffi::new_update_download_status());
         self.as_mut()
-            .set_download_status_4(ffi::new_download_status());
+            .set_download_status_4(ffi::new_update_download_status());
     }
 }
 

@@ -1,77 +1,19 @@
-use crate::models::packages::{DownloadStatus, Package};
+use crate::models::packages::Package;
+use crate::{with_model, with_model_bool};
+use cxx_qt::CxxQtType;
+use cxx_qt::Threading;
+use cxx_qt_lib::{QModelIndex, QString, QVariant};
 use futures_util::StreamExt;
-use libjewels::alpm::{DownloadProgress, InstallProgress, InstallablePackage};
+use libjewels::alpm::{DownloadProgress, InstallProgress, InstallablePackage, UpdatablePackage};
+use libjewels::aur::AurPackage;
+use libjewels::dbus::aur::AurProxy;
 use libjewels::dbus::get_bus;
 use libjewels::dbus::pacman::PacmanProxy;
 use libjewels::dbus::screensaver::ScreenSaverProxy;
 use notify_rust::{Hint, Notification, Timeout, Urgency};
-use qmetaobject::{
-    QObject, QPointer, SimpleListModel, qt_base_class, qt_method, qt_property, qt_signal,
-};
-use qttypes::QString;
-use std::cell::RefCell;
+use std::pin::Pin;
 use tokio::select;
 use zbus::Connection;
-
-#[allow(non_snake_case)]
-#[derive(QObject, Default)]
-pub struct Install {
-    base: qt_base_class!(trait QObject),
-    pub availablePackages: qt_property!(RefCell<SimpleListModel<Package>>; CONST),
-    pub refreshing: qt_property!(bool; NOTIFY refreshingChanged),
-    pub refreshingFailed: qt_property!(bool; NOTIFY refreshingFailedChanged),
-    pub installInProgress: qt_property!(bool; NOTIFY installInProgressChanged),
-    pub installFinished: qt_property!(bool; NOTIFY installFinishedChanged),
-    pub installFailed: qt_property!(bool; NOTIFY installFailedChanged),
-    pub downloadFinished: qt_property!(bool; NOTIFY downloadFinishedChanged),
-    pub installCount: qt_property!(i32; NOTIFY installCountChanged),
-    pub downloadStatus1: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus1Changed),
-    pub downloadStatus2: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus2Changed),
-    pub downloadStatus3: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus3Changed),
-    pub downloadStatus4: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus4Changed),
-    pub installPackage: qt_property!(QString; NOTIFY installPackageChanged),
-    pub installPercent: qt_property!(i32; NOTIFY installPercentChanged),
-    pub installHowMany: qt_property!(usize; NOTIFY installHowManyChanged),
-    pub installCurrent: qt_property!(usize; NOTIFY installCurrentChanged),
-    pub query: qt_property!(QString; NOTIFY queryChanged),
-
-    pub refreshingChanged: qt_signal!(),
-    pub refreshingFailedChanged: qt_signal!(),
-    pub installInProgressChanged: qt_signal!(),
-    pub installFinishedChanged: qt_signal!(),
-    pub installFailedChanged: qt_signal!(),
-    pub installCountChanged: qt_signal!(),
-    pub downloadStatus1Changed: qt_signal!(),
-    pub downloadStatus2Changed: qt_signal!(),
-    pub downloadStatus3Changed: qt_signal!(),
-    pub downloadStatus4Changed: qt_signal!(),
-    pub downloadFinishedChanged: qt_signal!(),
-    pub installPackageChanged: qt_signal!(),
-    pub installPercentChanged: qt_signal!(),
-    pub installHowManyChanged: qt_signal!(),
-    pub installCurrentChanged: qt_signal!(),
-    pub queryChanged: qt_signal!(),
-
-    pub search: qt_method!(
-        fn search(&mut self, query: QString) {
-            self.query = query.clone();
-            self.queryChanged();
-            self.search_packages(query.to_string());
-        }
-    ),
-    pub togglePackage: qt_method!(
-        fn togglePackage(&mut self, name: QString) {
-            self.toggle_package_install(name.to_string());
-        }
-    ),
-    pub performInstall: qt_method!(
-        fn performInstall(&mut self) {
-            self.perform_install();
-        }
-    ),
-
-    packages_to_install: Vec<String>,
-}
 
 enum InstallStatus {
     Download(DownloadProgress),
@@ -80,135 +22,299 @@ enum InstallStatus {
     Error,
 }
 
-impl Install {
-    pub fn search_packages(&mut self, query: String) {
-        self.refreshing = true;
-        self.refreshingChanged();
-        let qptr = QPointer::from(&*self);
-        let refresh = qmetaobject::queued_callback(move |packages: Vec<InstallablePackage>| {
-            if let Some(this) = qptr.as_pinned() {
-                let mut install_ref = this.borrow_mut();
-                install_ref.refreshing = false;
-                install_ref.refreshingChanged();
+#[cxx_qt::bridge]
+mod ffi {
+    unsafe extern "C++" {
+        include!(<QAbstractListModel>);
+        type QAbstractListModel;
 
-                let mut model = install_ref.availablePackages.borrow_mut();
-                model.reset_data(packages.into_iter().map(Package::from).collect());
+        include!("cxx-qt-lib/qmodelindex.h");
+        type QModelIndex = cxx_qt_lib::QModelIndex;
+
+        include!("cxx-qt-lib/qvariant.h");
+        type QVariant = cxx_qt_lib::QVariant;
+
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+
+        include!("cxx-qt-lib/qhash.h");
+        type QHash_i32_QByteArray = cxx_qt_lib::QHash<cxx_qt_lib::QHashPair_i32_QByteArray>;
+    }
+
+    #[namespace = "rust::cxxqtlib1"]
+    unsafe extern "C++" {
+        include!("cxx-qt-lib/common.h");
+
+        #[rust_name = "new_install_download_status"]
+        fn new_ptr() -> *mut InstallDownloadStatus;
+    }
+
+    #[qenum(Install)]
+    enum InstallRoles {
+        Name,
+        Version,
+        Description,
+    }
+
+    impl cxx_qt::Threading for Install {}
+    impl cxx_qt::Initialize for Install {}
+
+    #[auto_cxx_name]
+    #[auto_rust_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[base = QAbstractListModel]
+        #[qproperty(bool, refreshing)]
+        #[qproperty(bool, refreshing_failed)]
+        #[qproperty(bool, install_in_progress)]
+        #[qproperty(bool, install_finished)]
+        #[qproperty(bool, install_failed)]
+        #[qproperty(bool, download_finished)]
+        #[qproperty(*mut InstallDownloadStatus, download_status_1)]
+        #[qproperty(*mut InstallDownloadStatus, download_status_2)]
+        #[qproperty(*mut InstallDownloadStatus, download_status_3)]
+        #[qproperty(*mut InstallDownloadStatus, download_status_4)]
+        #[qproperty(QString, install_package)]
+        #[qproperty(i32, install_percent)]
+        #[qproperty(usize, install_how_many)]
+        #[qproperty(usize, install_current)]
+        type Install = super::InstallStruct;
+
+        #[cxx_override]
+        fn rowCount(&self, parent: &QModelIndex) -> i32;
+
+        #[cxx_override]
+        fn data(&self, index: &QModelIndex, role: i32) -> QVariant;
+
+        #[cxx_override]
+        fn roleNames(&self) -> QHash_i32_QByteArray;
+
+        #[inherit]
+        fn beginResetModel(self: Pin<&mut Self>);
+
+        #[inherit]
+        fn endResetModel(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn search(self: Pin<&mut Self>, query: QString);
+
+        #[qinvokable]
+        fn performInstall(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn togglePackage(self: Pin<&mut Self>, name: QString);
+    }
+
+    #[auto_cxx_name]
+    #[auto_rust_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[qproperty(QString, name)]
+        #[qproperty(f64, percent)]
+        #[qproperty(f64, total)]
+        #[qproperty(f64, current)]
+        type InstallDownloadStatus = super::InstallDownloadStatusStruct;
+
+        #[qinvokable]
+        fn reset(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn isFull(self: Pin<&mut Self>) -> bool;
+    }
+}
+
+#[derive(Default)]
+pub struct InstallStruct {
+    packages: Vec<Package>,
+    packages_to_install: Vec<String>,
+    refreshing: bool,
+    refreshing_failed: bool,
+    install_in_progress: bool,
+    install_finished: bool,
+    install_failed: bool,
+    download_finished: bool,
+    download_status_1: *mut ffi::InstallDownloadStatus,
+    download_status_2: *mut ffi::InstallDownloadStatus,
+    download_status_3: *mut ffi::InstallDownloadStatus,
+    download_status_4: *mut ffi::InstallDownloadStatus,
+    install_package: QString,
+    install_percent: i32,
+    install_how_many: usize,
+    install_current: usize,
+    query: String,
+    join_handle: Option<tokio::task::JoinHandle<()>>,
+}
+
+#[derive(Default)]
+pub struct InstallDownloadStatusStruct {
+    name: QString,
+    percent: f64,
+    total: f64,
+    current: f64,
+}
+
+impl ffi::InstallDownloadStatus {
+    fn reset(mut self: Pin<&mut Self>) {
+        self.as_mut().set_name("".into());
+        self.as_mut().set_percent(0f64);
+        self.as_mut().set_total(0f64);
+        self.as_mut().set_current(0f64);
+    }
+
+    fn is_full(self: Pin<&mut Self>) -> bool {
+        self.current() == self.total()
+    }
+}
+
+impl cxx_qt::Initialize for ffi::Install {
+    fn initialize(mut self: Pin<&mut Self>) {
+        self.as_mut()
+            .set_download_status_1(ffi::new_install_download_status());
+        self.as_mut()
+            .set_download_status_2(ffi::new_install_download_status());
+        self.as_mut()
+            .set_download_status_3(ffi::new_install_download_status());
+        self.as_mut()
+            .set_download_status_4(ffi::new_install_download_status());
+    }
+}
+
+impl ffi::Install {
+    fn row_count(&self, _: &QModelIndex) -> i32 {
+        self.packages.len() as i32
+    }
+
+    fn role_names(&self) -> ffi::QHash_i32_QByteArray {
+        let mut hash = ffi::QHash_i32_QByteArray::default();
+        hash.insert(ffi::InstallRoles::Name.repr, "name".into());
+        hash.insert(ffi::InstallRoles::Version.repr, "version".into());
+        hash.insert(ffi::InstallRoles::Description.repr, "description".into());
+        hash
+    }
+
+    fn data(&self, index: &ffi::QModelIndex, role: i32) -> QVariant {
+        let role = ffi::InstallRoles { repr: role };
+
+        if let Some(Package {
+            name,
+            version,
+            description,
+        }) = self.packages.get(index.row() as usize)
+        {
+            match role {
+                ffi::InstallRoles::Name => return name.into(),
+                ffi::InstallRoles::Version => return version.into(),
+                ffi::InstallRoles::Description => return description.into(),
+                _ => {}
             }
-        });
+        }
+        QVariant::default()
+    }
+
+    fn search(mut self: Pin<&mut Self>, query: QString) {
+        self.as_mut().set_refreshing(true);
+        self.as_mut().rust_mut().query = query.to_string();
+        let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            let result = || async move {
+            let packages = || async move {
                 let bus = get_bus().await?;
                 let conn = PacmanProxy::new(&bus).await?;
-                let packages = conn.search_packages(query.clone()).await?;
+                let packages = conn.search_packages(query.to_string()).await?;
                 Ok(packages) as zbus::Result<Vec<InstallablePackage>>
             };
-            if let Ok(result) = result().await {
-                refresh(result);
+            if let Ok(packages) = packages().await {
+                let packages = packages.into_iter().map(Package::from).collect();
+                qt_thread
+                    .queue(move |mut install| {
+                        install.as_mut().set_refreshing(false);
+                        install.as_mut().begin_reset_model();
+                        install.as_mut().rust_mut().packages = packages;
+                        install.as_mut().end_reset_model();
+                    })
+                    .unwrap();
             }
         });
     }
 
-    pub fn toggle_package_install(&mut self, name: String) {
-        if self.packages_to_install.contains(&name) {
-            self.packages_to_install
+    fn toggle_package(mut self: Pin<&mut Self>, name: QString) {
+        let name = name.to_string();
+        if self.as_mut().rust_mut().packages_to_install.contains(&name) {
+            self.as_mut()
+                .rust_mut()
+                .packages_to_install
                 .retain(|pkg| pkg.to_string() != name);
         } else {
-            self.packages_to_install.push(name);
+            self.as_mut().rust_mut().packages_to_install.push(name);
         }
     }
 
-    pub fn perform_install(&mut self) {
-        self.installInProgress = true;
-        self.availablePackages
-            .borrow_mut()
-            .reset_data(Default::default());
-        self.installInProgressChanged();
-        let qptr = QPointer::from(&*self);
-        let refresh_status = qmetaobject::queued_callback(move |install_status: InstallStatus| {
-            if let Some(this) = qptr.as_pinned() {
-                let mut install_ref = this.borrow_mut();
-                match install_status {
+    fn perform_install(mut self: Pin<&mut Self>) {
+        self.as_mut().set_install_in_progress(true);
+        self.as_mut().begin_reset_model();
+        self.as_mut().rust_mut().packages = vec![];
+        self.as_mut().end_reset_model();
+
+        let qt_thread = self.qt_thread();
+        let refresh_status = move |install_status: InstallStatus| {
+            qt_thread
+                .queue(move |mut this| match install_status {
                     InstallStatus::Download(progress) => {
-                        install_ref.downloadFinished = false;
+                        this.as_mut().set_download_finished(false);
                         let download_statuses = [
-                            &install_ref.downloadStatus1,
-                            &install_ref.downloadStatus2,
-                            &install_ref.downloadStatus3,
-                            &install_ref.downloadStatus4,
+                            this.download_status_1(),
+                            this.download_status_2(),
+                            this.download_status_3(),
+                            this.download_status_4(),
                         ];
                         let percent = (progress.status as f64 / progress.total as f64) * 100f64;
-                        let active_download = download_statuses
-                            .iter()
-                            .find(|status| status.borrow().name().to_string() == progress.filename);
+                        let active_download = download_statuses.into_iter().find(|status| {
+                            with_model_bool!(*status, |model| {
+                                model.name() == &QString::from(&progress.filename)
+                            })
+                        });
                         let first_full_download = download_statuses
                             .iter()
-                            .find(|status| status.borrow().total() == status.borrow().current());
+                            .find(|status| with_model_bool!(*status, |model| model.is_full()));
                         if let Some(download) = active_download {
-                            let mut download_ref = download.borrow_mut();
-                            if download_ref.current() < progress.status as f64 {
-                                download_ref.set_percent(percent);
-                                download_ref.set_total(progress.total as f64);
-                                download_ref.set_current(progress.status as f64);
-                            }
+                            with_model!(*download, |download| {
+                                if *download.current() < progress.status as f64 {
+                                    download.as_mut().set_percent(percent);
+                                    download.as_mut().set_total(progress.total as f64);
+                                    download.as_mut().set_current(progress.status as f64);
+                                }
+                            });
                         } else if let Some(download) = first_full_download {
-                            let mut download_ref = download.borrow_mut();
-                            download_ref.set_percent(percent);
-                            download_ref.set_total(progress.total as f64);
-                            download_ref.set_current(progress.status as f64);
-                            download_ref.set_name(progress.filename.into());
+                            with_model!(*download, |download| {
+                                download.as_mut().set_percent(percent);
+                                download.as_mut().set_total(progress.total as f64);
+                                download.as_mut().set_current(progress.status as f64);
+                                download.as_mut().set_name(progress.filename.into());
+                            });
                         }
-                        install_ref.downloadFinishedChanged();
                     }
                     InstallStatus::Install(progress) => {
-                        install_ref.downloadFinished = true;
-                        install_ref.installPackage = progress.package.into();
-                        install_ref.installPercent = progress.percent;
-                        install_ref.installHowMany = progress.howmany;
-                        install_ref.installCurrent = progress.current;
-                        install_ref.downloadStatus1.borrow_mut().reset();
-                        install_ref.downloadStatus2.borrow_mut().reset();
-                        install_ref.downloadStatus3.borrow_mut().reset();
-                        install_ref.downloadStatus4.borrow_mut().reset();
-                        install_ref.downloadFinishedChanged();
-                        install_ref.installPackageChanged();
-                        install_ref.installPercentChanged();
-                        install_ref.installHowManyChanged();
-                        install_ref.installCurrentChanged();
+                        this.as_mut().set_download_finished(true);
+                        this.as_mut().set_install_package(progress.package.into());
+                        this.as_mut().set_install_percent(progress.percent);
+                        this.as_mut().set_install_how_many(progress.howmany);
+                        this.as_mut().set_install_current(progress.current);
                     }
-                    InstallStatus::Complete => {
-                        install_ref.installFinished = true;
-                        install_ref.installInProgress = false;
-                        install_ref.downloadStatus1.borrow_mut().reset();
-                        install_ref.downloadStatus2.borrow_mut().reset();
-                        install_ref.downloadStatus3.borrow_mut().reset();
-                        install_ref.downloadStatus4.borrow_mut().reset();
-                        install_ref.installInProgressChanged();
-                        install_ref.installFinishedChanged();
-                        let query = install_ref.query.to_string();
-                        install_ref.search_packages(query);
-                        install_ref.packages_to_install.clear();
+                    InstallStatus::Complete | InstallStatus::Error => {
+                        this.as_mut().set_install_finished(true);
+                        this.as_mut().set_install_in_progress(false);
+                        let query = QString::from(this.as_mut().query.clone());
+                        this.as_mut().search(query);
                     }
-                    InstallStatus::Error => {
-                        install_ref.installFailed = true;
-                        install_ref.installInProgress = false;
-                        install_ref.downloadStatus1.borrow_mut().reset();
-                        install_ref.downloadStatus2.borrow_mut().reset();
-                        install_ref.downloadStatus3.borrow_mut().reset();
-                        install_ref.downloadStatus4.borrow_mut().reset();
-                        install_ref.installInProgressChanged();
-                        install_ref.installFinishedChanged();
-                        let query = install_ref.query.to_string();
-                        install_ref.search_packages(query);
-                        install_ref.packages_to_install.clear();
-                    }
-                }
-            }
-        });
+                })
+                .unwrap();
+        };
 
-        let packages_to_install = self.packages_to_install.clone();
+        let packages_to_install = self.rust().packages_to_install.clone();
         tokio::spawn(async move {
             let mut screen_saver_cookie = None;
-            let _ = async  {
+            let _ = async {
                 let session_bus = Connection::session().await?;
                 let screen_saver_proxy = ScreenSaverProxy::new(&session_bus).await?;
                 let cookie = screen_saver_proxy
