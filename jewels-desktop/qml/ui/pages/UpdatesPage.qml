@@ -9,223 +9,233 @@ Kirigami.ScrollablePage {
     objectName: "UpdatesPage"
     title: "Updates"
     background: Kirigami.Theme.backgroundColor
-    supportsRefreshing: true
-    onRefreshingChanged: {
-        if (refreshing) {
-            updates.refreshCache()
-        }
-    }
 
     Updates {
         id: updates
         Component.onCompleted: updates.refreshCache()
         onUpdateFinishedChanged: updates.refreshCache()
-        onRefreshingChanged: {
-            updatesPage.refreshing = refreshing
+        onDownloadFinishedChanged: {
+            updates.downloadStatus1.reset();
+            updates.downloadStatus2.reset();
+            updates.downloadStatus3.reset();
+            updates.downloadStatus4.reset();
         }
     }
 
-    Kirigami.CardsListView {
-        id: view
+    ColumnLayout {
+        anchors.fill: parent
+        spacing: Kirigami.Units.largeSpacing
 
-        header: ColumnLayout {
-            width: parent.width
-            anchors.margins: Kirigami.Units.gridUnit
+        Kirigami.Heading {
+            Layout.alignment: Qt.AlignTop
+            Layout.fillWidth: true
+            text: "Verfügbare Updates"
+        }
 
-            Item {
-                Layout.fillWidth: true
-                Layout.preferredHeight: Kirigami.Units.gridUnit / 2
-            }
+        Controls.BusyIndicator {
+            id: updatesBusyIndicator
 
-            Kirigami.Heading {
-                Layout.alignment: Qt.AlignTop
-                Layout.fillWidth: true
-                text: "Verfügbare Updates"
-            }
+            Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
+            visible: updates.refreshing
+        }
 
-            Kirigami.InlineMessage {
-                Layout.alignment: Qt.AlignTop
-                id: updatesMessage
-                Layout.fillWidth: true
-                text: `Du hast aktuell ${updates.updateCount} verfügbare Updates.`
-                visible: updates.updateCount > 0 && !updates.refreshing
+        Kirigami.InlineMessage {
+            Layout.alignment: Qt.AlignTop
+            id: updatesMessage
+            Layout.fillWidth: true
+            text: `Du hast aktuell ${updates.updateCount} verfügbare Updates.`
+            visible: updates.updateCount > 0 && !updates.refreshing
 
-                actions: [
-                    Kirigami.Action {
-                        text: "Jetzt aktualisieren"
-                        visible: !updates.updateInProgress
-                        onTriggered: {
-                            updatesMessage.text =
-                                "Die Updates werden installiert. Bitte warte ein bisschen, " +
-                                "du siehst unten den Fortschritt.";
-                            updates.updateSystem();
-                        }
+            actions: [
+                Kirigami.Action {
+                    text: "Jetzt aktualisieren"
+                    visible: !updates.updateInProgress
+                    onTriggered: {
+                        updatesMessage.text =
+                            "Die Updates werden installiert. Bitte warte ein bisschen, " +
+                            "du siehst unten den Fortschritt.";
+                        updates.updateSystem();
                     }
-                ]
-            }
+                }
+            ]
+        }
 
-            Kirigami.InlineMessage {
-                Layout.alignment: Qt.AlignTop
-                id: noUpdatesMessage
+        Kirigami.InlineMessage {
+            Layout.alignment: Qt.AlignTop
+            id: noUpdatesMessage
+            Layout.fillWidth: true
+            text: "Super, dein Rechner ist aktuell. Es gibt nichts zu tun."
+            visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
+            type: Kirigami.MessageType.Positive
+
+            actions: [
+                Kirigami.Action {
+                    text: "Such nochmal"
+                    onTriggered: updates.refreshCache()
+                }
+            ]
+        }
+
+        Kirigami.InlineMessage {
+            Layout.alignment: Qt.AlignTop
+            id: refreshFailedMessage
+            Layout.fillWidth: true
+            visible: updates.refreshingFailed && !updates.refreshing
+            type: Kirigami.MessageType.Error
+            text: "Leider konnten die neuesten Updates nicht abgerufen werden. " +
+                "Du kannst es jederzeit erneut versuchen."
+
+            actions: [
+                Kirigami.Action {
+                    text: "Erneut versuchen"
+                    onTriggered: updates.refreshCache()
+                }
+            ]
+        }
+
+        GridLayout {
+            Layout.alignment: Qt.AlignTop
+            columns: 3
+            visible: updates.updateInProgress || !updates.downloadFinished
+            rowSpacing: Kirigami.Units.smallSpacing
+            columnSpacing: Kirigami.Units.smallSpacing
+
+            Controls.Label {
+                Layout.minimumWidth: 150
+                Layout.maximumWidth: 150
+                elide: Text.ElideRight
+                text: updates.downloadStatus1.name
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.ProgressBar {
                 Layout.fillWidth: true
-                text: "Super, dein Rechner ist aktuell. Es gibt nichts zu tun."
-                visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
-                type: Kirigami.MessageType.Positive
-
-                actions: [
-                    Kirigami.Action {
-                        text: "Such nochmal"
-                        onTriggered: updates.refreshCache()
-                    }
-                ]
+                from: 0
+                to: updates.downloadStatus1.total
+                value: updates.downloadStatus1.current
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.Label {
+                Layout.alignment: Qt.AlignRight
+                text: `${updates.downloadStatus1.percent.toFixed(0)} %`
+                visible: updates.updateInProgress && !updates.downloadFinished
             }
 
-            Kirigami.InlineMessage {
-                Layout.alignment: Qt.AlignTop
-                id: refreshFailedMessage
+            Controls.Label {
+                Layout.minimumWidth: 150
+                Layout.maximumWidth: 150
+                elide: Text.ElideRight
+                text: updates.downloadStatus2.name
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.ProgressBar {
                 Layout.fillWidth: true
-                visible: updates.refreshingFailed && !updates.refreshing
-                type: Kirigami.MessageType.Error
-                text: "Leider konnten die neuesten Updates nicht abgerufen werden. " +
-                    "Du kannst es jederzeit erneut versuchen."
-
-                actions: [
-                    Kirigami.Action {
-                        text: "Erneut versuchen"
-                        onTriggered: updates.refreshCache()
-                    }
-                ]
+                from: 0
+                to: updates.downloadStatus2.total
+                value: updates.downloadStatus2.current
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.Label {
+                Layout.alignment: Qt.AlignRight
+                text: `${updates.downloadStatus2.percent.toFixed(0)} %`
+                visible: updates.updateInProgress && !updates.downloadFinished
             }
 
-            GridLayout {
-                Layout.alignment: Qt.AlignTop
-                columns: 3
-                visible: updates.updateInProgress || !updates.downloadFinished
-                rowSpacing: Kirigami.Units.smallSpacing
-                columnSpacing: Kirigami.Units.smallSpacing
+            Controls.Label {
+                Layout.minimumWidth: 150
+                Layout.maximumWidth: 150
+                elide: Text.ElideRight
+                text: updates.downloadStatus3.name
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.ProgressBar {
+                Layout.fillWidth: true
+                from: 0
+                to: updates.downloadStatus3.total
+                value: updates.downloadStatus3.current
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.Label {
+                Layout.alignment: Qt.AlignRight
+                text: `${updates.downloadStatus3.percent.toFixed(0)} %`
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
 
-                Controls.Label {
-                    Layout.minimumWidth: 150
-                    Layout.maximumWidth: 150
-                    elide: Text.ElideRight
-                    text: updates.downloadStatus1.name
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.ProgressBar {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: updates.downloadStatus1.total
-                    value: updates.downloadStatus1.current
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: `${updates.downloadStatus1.percent.toFixed(0)} %`
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
+            Controls.Label {
+                Layout.minimumWidth: 150
+                Layout.maximumWidth: 150
+                elide: Text.ElideRight
+                text: updates.downloadStatus4.name
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.ProgressBar {
+                Layout.fillWidth: true
+                from: 0
+                to: updates.downloadStatus4.total
+                value: updates.downloadStatus4.current
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
+            Controls.Label {
+                Layout.alignment: Qt.AlignRight
+                text: `${updates.downloadStatus4.percent.toFixed(0)} %`
+                visible: updates.updateInProgress && !updates.downloadFinished
+            }
 
-                Controls.Label {
-                    Layout.minimumWidth: 150
-                    Layout.maximumWidth: 150
-                    elide: Text.ElideRight
-                    text: updates.downloadStatus2.name
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.ProgressBar {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: updates.downloadStatus2.total
-                    value: updates.downloadStatus2.current
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: `${updates.downloadStatus2.percent.toFixed(0)} %`
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-
-                Controls.Label {
-                    Layout.minimumWidth: 150
-                    Layout.maximumWidth: 150
-                    elide: Text.ElideRight
-                    text: updates.downloadStatus3.name
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.ProgressBar {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: updates.downloadStatus3.total
-                    value: updates.downloadStatus3.current
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: `${updates.downloadStatus3.percent.toFixed(0)} %`
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-
-                Controls.Label {
-                    Layout.minimumWidth: 150
-                    Layout.maximumWidth: 150
-                    elide: Text.ElideRight
-                    text: updates.downloadStatus4.name
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.ProgressBar {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: updates.downloadStatus4.total
-                    value: updates.downloadStatus4.current
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-                Controls.Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: `${updates.downloadStatus4.percent.toFixed(0)} %`
-                    visible: updates.updateInProgress && !updates.downloadFinished
-                }
-
-                Controls.Label {
-                    Layout.minimumWidth: 150
-                    Layout.maximumWidth: 150
-                    elide: Text.ElideRight
-                    text: updates.installPackage
-                    visible: updates.updateInProgress && updates.downloadFinished
-                }
-                Controls.ProgressBar {
-                    Layout.fillWidth: true
-                    from: 0
-                    to: updates.installHowMany
-                    value: updates.installCurrent
-                    visible: updates.updateInProgress && updates.downloadFinished
-                }
-                Controls.Label {
-                    text: `${updates.installCurrent} von ${updates.installHowMany}`
-                    visible: updates.updateInProgress && updates.downloadFinished
-                }
+            Controls.Label {
+                Layout.minimumWidth: 150
+                Layout.maximumWidth: 150
+                elide: Text.ElideRight
+                text: updates.installPackage
+                visible: updates.updateInProgress && updates.downloadFinished
+            }
+            Controls.ProgressBar {
+                Layout.fillWidth: true
+                from: 0
+                to: updates.installHowMany
+                value: updates.installCurrent
+                visible: updates.updateInProgress && updates.downloadFinished
+            }
+            Controls.Label {
+                text: `${updates.installCurrent} von ${updates.installHowMany}`
+                visible: updates.updateInProgress && updates.downloadFinished
             }
         }
-        model: updates.updatablePackages
-        delegate: Kirigami.AbstractCard
-        {
-            header: GridLayout {
-                columns: 2
 
-                Kirigami.Heading {
-                    text: name
-                    level: 2
+        Item {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.verticalStretchFactor: 1
+            visible: updates.updateCount === 0
+        }
+
+        ListView {
+            id: view
+            Layout.fillHeight: true
+            Layout.fillWidth: true
+            spacing: Kirigami.Units.largeSpacing
+
+            model: updates
+            delegate: Kirigami.AbstractCard
+            {
+                header: GridLayout {
+                    columns: 2
+
+                    Kirigami.Heading {
+                        text: name
+                        level: 2
+                    }
+                    Controls.Label {
+                        Layout.alignment: Qt.AlignRight
+                        text: version
+                        opacity: 0.5
+                        wrapMode: Text.WordWrap
+                    }
                 }
-                Controls.Label {
-                    Layout.alignment: Qt.AlignRight
-                    text: version
-                    opacity: 0.5
+
+                contentItem: Controls.Label
+                {
+                    text: description
                     wrapMode: Text.WordWrap
                 }
-            }
-
-            contentItem: Controls.Label
-            {
-                text: description
-                wrapMode: Text.WordWrap
             }
         }
     }

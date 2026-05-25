@@ -1,78 +1,35 @@
-use crate::models::{Clipboard, Install, Jewels, Login, OneTimePasswords, Otp, Owners, Updates};
-use cstr::cstr;
+use cxx_qt_lib::{QGuiApplication, QQmlApplicationEngine, QQuickStyle, QString, QUrl};
+use cxx_qt_lib_extras::QApplication;
 use libjewels::configuration::load_config;
 use libjewels::dbus::{WireguardProxy, get_bus};
-use qmetaobject::{QmlEngine, qml_register_singleton_instance, qml_register_type, qrc};
 
 mod api;
 pub mod authentication;
 mod eol;
 pub mod models;
-pub mod qt;
 pub mod updater;
 
-qrc!(pages,
-    "cloud/ulbricht/jewels" {
-        "qml/ui/MainApp.qml",
-        "qml/ui/MainPage.qml",
-        "qml/ui/pages/InstallPage.qml",
-        "qml/ui/pages/JewelsPage.qml",
-        "qml/ui/pages/LoginPage.qml",
-        "qml/ui/pages/UpdatesPage.qml",
-        "qml/ui/pages/TwoFactorPage.qml",
-        "qml/ui/pages/TotpCard.qml",
-        "icons/jewels.svg"
-    }
-);
-
-pub fn register_qml_types() {
-    qml_register_type::<Jewels>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Jewels"));
-    qml_register_type::<Login>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Login"));
-    qml_register_type::<Updates>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Updates"));
-    qml_register_type::<Install>(cstr!("cloud.ulbricht.jewels"), 1, 0, cstr!("Install"));
-    qml_register_type::<OneTimePasswords>(
-        cstr!("cloud.ulbricht.jewels"),
-        1,
-        0,
-        cstr!("OneTimePasswords"),
-    );
-
-    qml_register_singleton_instance(
-        cstr!("cloud.ulbricht.jewels"),
-        1,
-        0,
-        cstr!(Clipboard),
-        Clipboard::default(),
-    );
-    qml_register_singleton_instance(
-        cstr!("cloud.ulbricht.jewels"),
-        1,
-        0,
-        cstr!(Otp),
-        Otp::default(),
-    );
-    qml_register_singleton_instance(
-        cstr!("cloud.ulbricht.jewels"),
-        1,
-        0,
-        cstr!(Owners),
-        Owners::default(),
-    );
-}
+extern crate cxx;
 
 fn run_app() {
-    qmetaobject::log::init_qt_to_rust();
+    let mut app = QApplication::new();
 
-    pages();
+    QGuiApplication::set_desktop_file_name(&QString::from("dev.imanuel.jewels"));
 
-    qt::app::set_desktop_file("dev.imanuel.jewels");
+    if std::env::var("QT_QUICK_CONTROLS_STYLE").is_err() {
+        QQuickStyle::set_style(&QString::from("org.kde.desktop"));
+    }
 
-    register_qml_types();
+    let mut engine = QQmlApplicationEngine::new();
+    if let Some(engine) = engine.as_mut() {
+        engine.load(&QUrl::from(
+            "qrc:/qt/qml/cloud/ulbricht/jewels/qml/ui/MainApp.qml",
+        ));
+    }
 
-    let mut engine = QmlEngine::new();
-    engine.load_file("qrc:/cloud/ulbricht/jewels/qml/ui/MainApp.qml".into());
-
-    engine.exec();
+    if let Some(app) = app.as_mut() {
+        app.exec();
+    }
 }
 
 pub async fn update_wireguard() -> zbus::Result<()> {

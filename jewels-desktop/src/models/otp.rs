@@ -1,45 +1,54 @@
-use qmetaobject::{QObject, QString, qt_base_class, qt_method};
 use std::time::{SystemTime, UNIX_EPOCH};
+use cxx_qt_lib::QString;
 use totp_rs::{Algorithm, Secret, TOTP};
 
-#[allow(non_snake_case)]
-#[derive(QObject, Default)]
-pub struct Otp {
-    base: qt_base_class!(trait QObject),
+#[cxx_qt::bridge]
+mod ffi {
+    unsafe extern "C++" {
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+    }
 
-    pub generate: qt_method!(
-        fn generate(&self, secret_key: QString) -> QString {
-            match self.generate_otp_code(secret_key.to_string()) {
-                Ok(otp_code) => otp_code,
-                Err(err) => {
-                    log::error!("Error generating totp: {err}");
-                    "Fehler".into()
-                }
-            }
-        }
-    ),
-    pub timeStep: qt_method!(
-        fn timeStep(&self) -> u64 {
-            let step = self.get_time_step();
-            log::info!("Time step: {step}");
-            step
-        }
-    ),
+    #[auto_cxx_name]
+    #[auto_rust_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[qml_singleton]
+        type Otp = super::OtpStruct;
+
+        #[qinvokable]
+        fn generate(&self, secret_key: QString) -> QString;
+
+        #[qinvokable]
+        fn time_step(&self) -> u64;
+    }
 }
 
-impl Otp {
-    fn generate_otp_code(&self, secret_key: String) -> anyhow::Result<QString> {
+#[derive(Default)]
+pub struct OtpStruct {}
+
+impl ffi::Otp {
+    fn generate_code(&self, secret_key: String) -> anyhow::Result<String> {
         let totp = TOTP::new_unchecked(
             Algorithm::SHA1,
             6,
             0,
             30,
-            Secret::Encoded(secret_key).to_bytes()?,
+            Secret::Encoded(secret_key.to_string()).to_bytes()?,
         );
         Ok(totp.generate_current()?.to_string().into())
     }
 
-    fn get_time_step(&self) -> u64 {
+    fn generate(&self, secret_key: QString) -> QString {
+        if let Ok(code) = self.generate_code(secret_key.to_string()) {
+            code.into()
+        } else {
+            "Fehler".into()
+        }
+    }
+
+    fn time_step(&self) -> u64 {
         let time = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()

@@ -1,93 +1,86 @@
+use cxx_qt::Threading;
+use cxx_qt_lib::QString;
 use libjewels::configuration::{JewelsConfiguration, load_config, write_config};
-use qmetaobject::{QObject, QPointer, qt_base_class, qt_method, qt_property, qt_signal};
-use qttypes::QString;
+use std::pin::Pin;
 
-#[allow(non_snake_case)]
-#[derive(QObject)]
-pub struct Login {
-    base: qt_base_class!(trait QObject),
-    pub host: qt_property!(QString; NOTIFY host_changed),
-    pub token: qt_property!(QString; NOTIFY token_changed),
-    pub loggedIn: qt_property!(bool; NOTIFY loggedInChanged),
-    pub loginInProgress: qt_property!(bool;  NOTIFY loginInProgressChanged),
-    pub loggedInChanged: qt_signal!(),
-    pub loginInProgressChanged: qt_signal!(),
-    pub host_changed: qt_signal!(),
-    pub token_changed: qt_signal!(),
-    pub loginSuccessful: qt_signal!(),
-    pub triggerLogin: qt_method!(
-        fn triggerLogin(&mut self) {
-            self.perform_login();
-        }
-    ),
-    pub logout: qt_method!(
-        fn logout(&mut self) {
-            self.perform_logout();
-        }
-    ),
+#[cxx_qt::bridge]
+mod ffi {
+    unsafe extern "C++" {
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+    }
+
+    impl cxx_qt::Threading for Login {}
+
+    #[auto_cxx_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[qproperty(QString, host)]
+        #[qproperty(QString, token)]
+        #[qproperty(bool, logged_in, cxx_name = "loggedIn")]
+        #[qproperty(bool, login_in_progress, cxx_name = "loginInProgress")]
+        type Login = super::LoginStruct;
+
+        #[qinvokable]
+        fn logout(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn login(self: Pin<&mut Self>);
+
+        #[qsignal]
+        fn login_successful(self: Pin<&mut Self>);
+    }
 }
 
-impl Default for Login {
+pub struct LoginStruct {
+    host: QString,
+    token: QString,
+    logged_in: bool,
+    login_in_progress: bool,
+}
+
+impl Default for LoginStruct {
     fn default() -> Self {
         let config = load_config();
 
         Self {
-            loggedIn: !config.host.is_empty(),
+            logged_in: !config.host.is_empty(),
             host: config.host.into(),
             token: config.token.into(),
-            loginInProgress: false,
-            base: Default::default(),
-            triggerLogin: Default::default(),
-            logout: Default::default(),
-            host_changed: Default::default(),
-            token_changed: Default::default(),
-            loginSuccessful: Default::default(),
-            loggedInChanged: Default::default(),
-            loginInProgressChanged: Default::default(),
+            login_in_progress: false,
         }
     }
 }
 
-impl Login {
-    fn perform_logout(&mut self) {
-        self.host = "".into();
-        self.token = "".into();
+impl ffi::Login {
+    fn logout(mut self: Pin<&mut Self>) {
+        self.as_mut().set_host("".into());
+        self.as_mut().set_token("".into());
         let _ = write_config(JewelsConfiguration::default());
-        self.loggedIn = false;
-        self.loginInProgress = false;
-        self.loggedInChanged();
-        self.loginInProgressChanged();
+        self.as_mut().set_logged_in(false);
+        self.as_mut().set_login_in_progress(false);
     }
 
-    fn perform_login(&mut self) {
-        self.loginInProgress = true;
-        self.loginInProgressChanged();
-        let qptr = QPointer::from(&*self);
-        let reload_configuration = qmetaobject::queued_callback(move |()| {
-            let config = load_config();
-            if let Some(this) = qptr.as_pinned() {
-                let mut jewels_config = this.borrow_mut();
-                jewels_config.loggedIn = !config.host.is_empty();
-                jewels_config.loginInProgress = false;
-                jewels_config.host = config.host.into();
-                jewels_config.token = config.token.into();
-                jewels_config.host_changed();
-                jewels_config.token_changed();
-                jewels_config.loggedInChanged();
-                jewels_config.loginInProgressChanged();
-                jewels_config.loginSuccessful();
-            }
-            tokio::spawn(async move {
-                if libjewels::collector::send_device_data().await.is_err() {
-                    log::error!("Error sending device data");
-                    tokio::time::sleep(std::time::Duration::from_mins(5)).await;
-                    let _ = libjewels::collector::send_device_data().await;
-                }
-            });
-        });
+    fn login(mut self: Pin<&mut Self>) {
+        self.as_mut().set_login_in_progress(true);
+        let qt_thread = self.qt_thread();
         tokio::spawn(async move {
             crate::authentication::start_listener().await;
-            reload_configuration(());
+            let config = load_config();
+            qt_thread
+                .queue(move |mut login| {
+                    login.as_mut().set_logged_in(!config.host.is_empty());
+                    login.as_mut().set_login_in_progress(false);
+                    login.as_mut().set_host(config.host.into());
+                    login.as_mut().set_token(config.token.into());
+                    login.login_successful();
+                })
+                .unwrap();
+            if libjewels::collector::send_device_data().await.is_err() {
+                log::error!("Error sending device data");
+                tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+            }
         });
     }
 }

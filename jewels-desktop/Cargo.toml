@@ -4,19 +4,20 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+libjewels = { path = "../libjewels" }
+
 anyhow = { workspace = true }
 arboard = { workspace = true }
-cpp = { workspace = true }
-cstr = { workspace = true }
+cxx = { workspace = true }
+cxx-qt = { workspace = true }
+cxx-qt-lib = { workspace = true }
+cxx-qt-lib-extras = { workspace = true }
 env_logger = { workspace = true }
 futures-util = { workspace = true }
-libjewels = { path = "../libjewels" }
 log = { workspace = true }
 notify-rust = { workspace = true }
 open = { workspace = true }
 progress_bar = { workspace = true }
-qmetaobject = { workspace = true }
-qttypes = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 termsize = { workspace = true }
@@ -27,5 +28,4 @@ xdg = { workspace = true }
 zbus = { workspace = true }
 
 [build-dependencies]
-cpp_build = { workspace = true }
-semver = { workspace = true }
+cxx-qt-build = { workspace = true }

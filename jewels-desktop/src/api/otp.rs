@@ -5,7 +5,7 @@ use crate::api::owner::Owner;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OneTimePassword {
+pub struct MyOneTimePassword {
     pub id: i64,
     pub account_name: String,
     pub account_issuer: String,
@@ -36,7 +36,7 @@ pub struct SharedOneTimePassword {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OneTimePasswords {
-    pub my_one_time_passwords: Vec<OneTimePassword>,
+    pub my_one_time_passwords: Vec<MyOneTimePassword>,
     pub shared_one_time_passwords: Vec<SharedOneTimePassword>,
 }
 

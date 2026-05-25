@@ -1,66 +1,30 @@
-use crate::models::packages::{DownloadStatus, Package};
+use crate::models::packages::Package;
+use crate::{with_model, with_model_bool};
+use cxx_qt::CxxQtType;
+use cxx_qt::Threading;
+use cxx_qt_lib::{QModelIndex, QString, QVariant};
+use futures_util::StreamExt;
 use libjewels::alpm::{DownloadProgress, InstallProgress, UpdatablePackage};
 use libjewels::aur::AurPackage;
 use libjewels::dbus::aur::AurProxy;
+use libjewels::dbus::get_bus;
+use libjewels::dbus::pacman::PacmanProxy;
 use libjewels::dbus::screensaver::ScreenSaverProxy;
-use libjewels::dbus::{get_bus, pacman::PacmanProxy};
 use notify_rust::{Hint, Notification, Timeout, Urgency};
-use qmetaobject::{
-    QObject, QPointer, SimpleListModel, qt_base_class, qt_method, qt_property, qt_signal,
-};
-use qttypes::QString;
-use std::cell::RefCell;
+use std::pin::Pin;
 use tokio::select;
 use zbus::Connection;
-use zbus::export::ordered_stream::OrderedStreamExt;
 
-#[allow(non_snake_case)]
-#[derive(QObject, Default)]
-pub struct Updates {
-    base: qt_base_class!(trait QObject),
-    pub updatablePackages: qt_property!(RefCell<SimpleListModel<Package>>; CONST),
-    pub refreshing: qt_property!(bool; NOTIFY refreshingChanged),
-    pub refreshingFailed: qt_property!(bool; NOTIFY refreshingFailedChanged),
-    pub updateInProgress: qt_property!(bool; NOTIFY updateInProgressChanged),
-    pub updateFinished: qt_property!(bool; NOTIFY updateFinishedChanged),
-    pub updateFailed: qt_property!(bool; NOTIFY updateFailedChanged),
-    pub downloadFinished: qt_property!(bool; NOTIFY downloadFinishedChanged),
-    pub updateCount: qt_property!(i32; NOTIFY updateCountChanged),
-    pub downloadStatus1: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus1Changed),
-    pub downloadStatus2: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus2Changed),
-    pub downloadStatus3: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus3Changed),
-    pub downloadStatus4: qt_property!(RefCell<DownloadStatus>; NOTIFY downloadStatus4Changed),
-    pub installPackage: qt_property!(QString; NOTIFY installPackageChanged),
-    pub installPercent: qt_property!(i32; NOTIFY installPercentChanged),
-    pub installHowMany: qt_property!(usize; NOTIFY installHowManyChanged),
-    pub installCurrent: qt_property!(usize; NOTIFY installCurrentChanged),
+async fn refresh_packages_async() -> zbus::Result<Vec<UpdatablePackage>> {
+    let pacman = PacmanProxy::new(&get_bus().await?).await?;
 
-    pub refreshingChanged: qt_signal!(),
-    pub refreshingFailedChanged: qt_signal!(),
-    pub updateInProgressChanged: qt_signal!(),
-    pub updateFinishedChanged: qt_signal!(),
-    pub updateFailedChanged: qt_signal!(),
-    pub updateCountChanged: qt_signal!(),
-    pub downloadStatus1Changed: qt_signal!(),
-    pub downloadStatus2Changed: qt_signal!(),
-    pub downloadStatus3Changed: qt_signal!(),
-    pub downloadStatus4Changed: qt_signal!(),
-    pub downloadFinishedChanged: qt_signal!(),
-    pub installPackageChanged: qt_signal!(),
-    pub installPercentChanged: qt_signal!(),
-    pub installHowManyChanged: qt_signal!(),
-    pub installCurrentChanged: qt_signal!(),
+    pacman.get_available_updates().await.map_err(Into::into)
+}
 
-    pub updateSystem: qt_method!(
-        fn updateSystem(&mut self) {
-            self.update_system();
-        }
-    ),
-    pub refreshCache: qt_method!(
-        fn refreshCache(&mut self) {
-            self.refresh_packages();
-        }
-    ),
+async fn refresh_aur_packages_async() -> zbus::Result<Vec<AurPackage>> {
+    let aur = AurProxy::new(&get_bus().await?).await?;
+
+    aur.get_available_updates().await.map_err(Into::into)
 }
 
 enum UpdateStatus {
@@ -70,92 +34,255 @@ enum UpdateStatus {
     Error,
 }
 
-impl Updates {
-    pub fn update_system(&mut self) {
-        self.updateInProgress = true;
-        self.updatablePackages
-            .borrow_mut()
-            .reset_data(Default::default());
-        self.updateInProgressChanged();
+#[cxx_qt::bridge]
+mod ffi {
+    unsafe extern "C++" {
+        include!(<QAbstractListModel>);
+        type QAbstractListModel;
 
-        let qptr = QPointer::from(&*self);
-        let refresh_status = qmetaobject::queued_callback(move |updates: UpdateStatus| {
-            if let Some(this) = qptr.as_pinned() {
-                let mut updates_ref = this.borrow_mut();
-                match updates {
+        include!("cxx-qt-lib/qmodelindex.h");
+        type QModelIndex = cxx_qt_lib::QModelIndex;
+
+        include!("cxx-qt-lib/qvariant.h");
+        type QVariant = cxx_qt_lib::QVariant;
+
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+
+        include!("cxx-qt-lib/qhash.h");
+        type QHash_i32_QByteArray = cxx_qt_lib::QHash<cxx_qt_lib::QHashPair_i32_QByteArray>;
+    }
+
+    #[namespace = "rust::cxxqtlib1"]
+    unsafe extern "C++" {
+        include!("cxx-qt-lib/common.h");
+
+        #[rust_name = "new_update_download_status"]
+        fn new_ptr() -> *mut UpdateDownloadStatus;
+    }
+
+    #[qenum(Updates)]
+    enum UpdatesRoles {
+        Name,
+        Version,
+        Description,
+    }
+
+    impl cxx_qt::Threading for Updates {}
+    impl cxx_qt::Initialize for Updates {}
+
+    #[auto_cxx_name]
+    #[auto_rust_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[base = QAbstractListModel]
+        #[qproperty(bool, refreshing)]
+        #[qproperty(bool, refreshing_failed)]
+        #[qproperty(bool, update_in_progress)]
+        #[qproperty(bool, update_finished)]
+        #[qproperty(bool, update_failed)]
+        #[qproperty(bool, download_finished)]
+        #[qproperty(i32, update_count)]
+        #[qproperty(*mut UpdateDownloadStatus, download_status_1)]
+        #[qproperty(*mut UpdateDownloadStatus, download_status_2)]
+        #[qproperty(*mut UpdateDownloadStatus, download_status_3)]
+        #[qproperty(*mut UpdateDownloadStatus, download_status_4)]
+        #[qproperty(QString, install_package)]
+        #[qproperty(i32, install_percent)]
+        #[qproperty(usize, install_how_many)]
+        #[qproperty(usize, install_current)]
+        type Updates = super::UpdatesStruct;
+
+        #[qinvokable]
+        fn updateSystem(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn refreshCache(self: Pin<&mut Self>);
+
+        #[cxx_override]
+        fn rowCount(&self, parent: &QModelIndex) -> i32;
+
+        #[cxx_override]
+        fn data(&self, index: &QModelIndex, role: i32) -> QVariant;
+
+        #[cxx_override]
+        fn roleNames(&self) -> QHash_i32_QByteArray;
+
+        #[inherit]
+        fn beginResetModel(self: Pin<&mut Self>);
+
+        #[inherit]
+        fn endResetModel(self: Pin<&mut Self>);
+    }
+
+    #[auto_cxx_name]
+    #[auto_rust_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[qproperty(QString, name)]
+        #[qproperty(f64, percent)]
+        #[qproperty(f64, total)]
+        #[qproperty(f64, current)]
+        type UpdateDownloadStatus = super::UpdateDownloadStatusStruct;
+
+        #[qinvokable]
+        fn reset(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn isFull(self: Pin<&mut Self>) -> bool;
+    }
+}
+
+#[derive(Default)]
+pub struct UpdatesStruct {
+    packages: Vec<Package>,
+    refreshing: bool,
+    refreshing_failed: bool,
+    update_in_progress: bool,
+    update_finished: bool,
+    update_failed: bool,
+    download_finished: bool,
+    update_count: i32,
+    download_status_1: *mut ffi::UpdateDownloadStatus,
+    download_status_2: *mut ffi::UpdateDownloadStatus,
+    download_status_3: *mut ffi::UpdateDownloadStatus,
+    download_status_4: *mut ffi::UpdateDownloadStatus,
+    install_package: QString,
+    install_percent: i32,
+    install_how_many: usize,
+    install_current: usize,
+    join_handle: Option<tokio::task::JoinHandle<()>>,
+}
+
+#[derive(Default)]
+pub struct UpdateDownloadStatusStruct {
+    name: QString,
+    percent: f64,
+    total: f64,
+    current: f64,
+}
+
+impl ffi::UpdateDownloadStatus {
+    fn reset(mut self: Pin<&mut Self>) {
+        self.as_mut().set_name("".into());
+        self.as_mut().set_percent(0f64);
+        self.as_mut().set_total(0f64);
+        self.as_mut().set_current(0f64);
+    }
+
+    fn is_full(self: Pin<&mut Self>) -> bool {
+        self.current() == self.total()
+    }
+}
+
+impl cxx_qt::Initialize for ffi::Updates {
+    fn initialize(mut self: Pin<&mut Self>) {
+        self.as_mut()
+            .set_download_status_1(ffi::new_update_download_status());
+        self.as_mut()
+            .set_download_status_2(ffi::new_update_download_status());
+        self.as_mut()
+            .set_download_status_3(ffi::new_update_download_status());
+        self.as_mut()
+            .set_download_status_4(ffi::new_update_download_status());
+    }
+}
+
+impl ffi::Updates {
+    fn row_count(&self, _: &QModelIndex) -> i32 {
+        self.packages.len() as i32
+    }
+
+    fn role_names(&self) -> ffi::QHash_i32_QByteArray {
+        let mut hash = ffi::QHash_i32_QByteArray::default();
+        hash.insert(ffi::UpdatesRoles::Name.repr, "name".into());
+        hash.insert(ffi::UpdatesRoles::Version.repr, "version".into());
+        hash.insert(ffi::UpdatesRoles::Description.repr, "description".into());
+        hash
+    }
+
+    fn data(&self, index: &ffi::QModelIndex, role: i32) -> QVariant {
+        let role = ffi::UpdatesRoles { repr: role };
+
+        if let Some(Package {
+            name,
+            version,
+            description,
+        }) = self.packages.get(index.row() as usize)
+        {
+            match role {
+                ffi::UpdatesRoles::Name => return name.into(),
+                ffi::UpdatesRoles::Version => return version.into(),
+                ffi::UpdatesRoles::Description => return description.into(),
+                _ => {}
+            }
+        }
+        QVariant::default()
+    }
+
+    fn update_system(mut self: Pin<&mut Self>) {
+        self.as_mut().set_update_in_progress(true);
+        self.as_mut().begin_reset_model();
+        self.as_mut().rust_mut().packages = vec![];
+        self.as_mut().end_reset_model();
+
+        let qt_thread = self.qt_thread();
+        let refresh_status = move |updates: UpdateStatus| {
+            qt_thread
+                .queue(move |mut this| match updates {
                     UpdateStatus::Download(progress) => {
-                        updates_ref.downloadFinished = false;
+                        this.as_mut().set_download_finished(false);
                         let download_statuses = [
-                            &updates_ref.downloadStatus1,
-                            &updates_ref.downloadStatus2,
-                            &updates_ref.downloadStatus3,
-                            &updates_ref.downloadStatus4,
+                            this.download_status_1(),
+                            this.download_status_2(),
+                            this.download_status_3(),
+                            this.download_status_4(),
                         ];
                         let percent = (progress.status as f64 / progress.total as f64) * 100f64;
-                        let active_download = download_statuses
-                            .iter()
-                            .find(|status| status.borrow().name().to_string() == progress.filename);
+                        let active_download = download_statuses.into_iter().find(|status| {
+                            with_model_bool!(*status, |model| {
+                                model.name() == &QString::from(&progress.filename)
+                            })
+                        });
                         let first_full_download = download_statuses
                             .iter()
-                            .find(|status| status.borrow().total() == status.borrow().current());
+                            .find(|status| with_model_bool!(*status, |model| model.is_full()));
                         if let Some(download) = active_download {
-                            let mut download_ref = download.borrow_mut();
-                            if download_ref.current() < progress.status as f64 {
-                                download_ref.set_percent(percent);
-                                download_ref.set_total(progress.total as f64);
-                                download_ref.set_current(progress.status as f64);
-                            }
+                            with_model!(*download, |download| {
+                                if *download.current() < progress.status as f64 {
+                                    download.as_mut().set_percent(percent);
+                                    download.as_mut().set_total(progress.total as f64);
+                                    download.as_mut().set_current(progress.status as f64);
+                                }
+                            });
                         } else if let Some(download) = first_full_download {
-                            let mut download_ref = download.borrow_mut();
-                            download_ref.set_percent(percent);
-                            download_ref.set_total(progress.total as f64);
-                            download_ref.set_current(progress.status as f64);
-                            download_ref.set_name(progress.filename.into());
+                            with_model!(*download, |download| {
+                                download.as_mut().set_percent(percent);
+                                download.as_mut().set_total(progress.total as f64);
+                                download.as_mut().set_current(progress.status as f64);
+                                download.as_mut().set_name(progress.filename.into());
+                            });
                         }
-                        updates_ref.downloadFinishedChanged();
                     }
                     UpdateStatus::Update(progress) => {
-                        updates_ref.downloadFinished = true;
-                        updates_ref.installPackage = progress.package.into();
-                        updates_ref.installPercent = progress.percent;
-                        updates_ref.installHowMany = progress.howmany;
-                        updates_ref.installCurrent = progress.current;
-                        updates_ref.downloadStatus1.borrow_mut().reset();
-                        updates_ref.downloadStatus2.borrow_mut().reset();
-                        updates_ref.downloadStatus3.borrow_mut().reset();
-                        updates_ref.downloadStatus4.borrow_mut().reset();
-                        updates_ref.downloadFinishedChanged();
-                        updates_ref.installPackageChanged();
-                        updates_ref.installPercentChanged();
-                        updates_ref.installHowManyChanged();
-                        updates_ref.installCurrentChanged();
+                        this.as_mut().set_download_finished(true);
+                        this.as_mut().set_install_package(progress.package.into());
+                        this.as_mut().set_install_percent(progress.percent);
+                        this.as_mut().set_install_how_many(progress.howmany);
+                        this.as_mut().set_install_current(progress.current);
                     }
-                    UpdateStatus::Complete => {
-                        updates_ref.updateFinished = true;
-                        updates_ref.updateInProgress = false;
-                        updates_ref.downloadStatus1.borrow_mut().reset();
-                        updates_ref.downloadStatus2.borrow_mut().reset();
-                        updates_ref.downloadStatus3.borrow_mut().reset();
-                        updates_ref.downloadStatus4.borrow_mut().reset();
-                        updates_ref.updateInProgressChanged();
-                        updates_ref.updateFinishedChanged();
+                    UpdateStatus::Complete | UpdateStatus::Error => {
+                        this.as_mut().set_update_finished(true);
+                        this.as_mut().set_update_in_progress(false);
                     }
-                    UpdateStatus::Error => {
-                        updates_ref.updateFailed = true;
-                        updates_ref.updateInProgress = false;
-                        updates_ref.downloadStatus1.borrow_mut().reset();
-                        updates_ref.downloadStatus2.borrow_mut().reset();
-                        updates_ref.downloadStatus3.borrow_mut().reset();
-                        updates_ref.downloadStatus4.borrow_mut().reset();
-                        updates_ref.updateInProgressChanged();
-                        updates_ref.updateFinishedChanged();
-                    }
-                }
-            }
-        });
+                })
+                .unwrap();
+        };
         tokio::spawn(async move {
             let mut screen_saver_cookie = None;
-            let _ = async  {
+            let _ = async {
                 let session_bus = Connection::session().await?;
                 let screen_saver_proxy = ScreenSaverProxy::new(&session_bus).await?;
                 let cookie = screen_saver_proxy
@@ -219,40 +346,12 @@ impl Updates {
 
                     move || async move {
                         if let Some(aur_proxy) = aur_proxy {
-                            let mut update = if let Ok(update) = aur_proxy.receive_update().await {
-                                update
-                            } else {
-                                return;
-                            };
-                            let mut failure = if let Ok(failure) = aur_proxy.receive_failure().await
-                            {
-                                failure
-                            } else {
-                                return;
-                            };
-                            let mut finished =
-                                if let Ok(finished) = aur_proxy.receive_finished().await {
-                                    finished
-                                } else {
-                                    return;
-                                };
-                            let mut build_started = if let Ok(build_started) =
-                                aur_proxy.receive_build_started().await
-                            {
-                                build_started
-                            } else {
-                                return;
-                            };
-                            let mut built = if let Ok(built) = aur_proxy.receive_built().await {
-                                built
-                            } else {
-                                return;
-                            };
-                            let mut failed = if let Ok(failed) = aur_proxy.receive_failed().await {
-                                failed
-                            } else {
-                                return;
-                            };
+                            let mut update = aur_proxy.receive_update().await?;
+                            let mut failure = aur_proxy.receive_failure().await?;
+                            let mut finished = aur_proxy.receive_finished().await?;
+                            let mut build_started = aur_proxy.receive_build_started().await?;
+                            let mut built = aur_proxy.receive_built().await?;
+                            let mut failed = aur_proxy.receive_failed().await?;
 
                             if aur_proxy.install_updates().await.is_err() {
                                 refresh_status(UpdateStatus::Error);
@@ -319,6 +418,8 @@ impl Updates {
                                 .show_async()
                                 .await;
                         }
+
+                        Ok(()) as zbus::Result<()>
                     }
                 };
 
@@ -336,7 +437,7 @@ impl Updates {
                         },
                         Some(_) = finished.next() => {
                             if aur_packages_count > 0 {
-                                update_aur().await;
+                                let _ = update_aur().await;
                             } else {
                                 notify_success().await;
                             }
@@ -362,83 +463,42 @@ impl Updates {
         });
     }
 
-    async fn refresh_packages_async() -> zbus::Result<Vec<UpdatablePackage>> {
-        let pacman = PacmanProxy::new(&get_bus().await?).await?;
+    fn refresh_cache(mut self: Pin<&mut Self>) {
+        if let Some(join_handle) = &self.as_mut().join_handle {
+            join_handle.abort();
+        }
+        self.as_mut().set_refreshing(true);
+        self.as_mut().set_refreshing_failed(false);
 
-        pacman.get_available_updates().await.map_err(Into::into)
-    }
-
-    async fn refresh_aur_packages_async() -> zbus::Result<Vec<AurPackage>> {
-        let aur = AurProxy::new(&get_bus().await?).await?;
-
-        aur.get_available_updates().await.map_err(Into::into)
-    }
-
-    pub fn refresh_packages(&mut self) {
-        self.refreshing = true;
-        self.refreshingChanged();
-
-        let qptr = QPointer::from(&*self);
-        let refresh =
-            qmetaobject::queued_callback(move |updates: Option<Vec<UpdatablePackage>>| {
-                if let Some(this) = qptr.as_pinned() {
-                    let mut updates_ref = this.borrow_mut();
-                    if let Some(updates) = updates {
-                        updates_ref.updateCount = updates.len() as i32;
-                        updates_ref.refreshingFailed = false;
-                        let mut model = updates_ref.updatablePackages.borrow_mut();
-                        model.reset_data(updates.into_iter().map(Package::from).collect());
-                        updates_ref.updateCountChanged();
-                        updates_ref.refreshingFailedChanged();
-                    } else {
-                        updates_ref.refreshingFailed = true;
-                        updates_ref.refreshingFailedChanged();
-                    }
-                    updates_ref.refreshing = false;
-                    updates_ref.refreshingChanged();
-                }
-            });
-
-        let qptr = QPointer::from(&*self);
-        let append_aur = qmetaobject::queued_callback(move |updates: Option<Vec<AurPackage>>| {
-            if let Some(this) = qptr.as_pinned() {
-                let mut updates_ref = this.borrow_mut();
-                if let Some(updates) = updates {
-                    updates_ref.updateCount = updates.len() as i32;
-                    updates_ref.refreshingFailed = false;
-                    let mut model = updates_ref.updatablePackages.borrow_mut();
-                    model.reset_data(updates.into_iter().map(Package::from).collect());
-                    updates_ref.updateCountChanged();
-                    updates_ref.refreshingFailedChanged();
-                } else {
-                    updates_ref.refreshingFailed = true;
-                    updates_ref.refreshingFailedChanged();
-                }
-                updates_ref.refreshing = false;
-                updates_ref.refreshingChanged();
+        let qt_thread = self.qt_thread();
+        self.as_mut().rust_mut().join_handle = Some(tokio::spawn(async move {
+            let (pacman, aur) =
+                futures_util::future::join(refresh_packages_async(), refresh_aur_packages_async())
+                    .await;
+            let mut packages = vec![];
+            let mut failed = false;
+            if let Ok(pacman) = pacman {
+                let mut pacman = pacman.into_iter().map(Package::from).collect::<Vec<_>>();
+                packages.append(&mut pacman);
+            } else {
+                failed = true;
             }
-        });
-
-        tokio::spawn(async move {
-            let (pacman, aur) = futures_util::future::join(
-                Self::refresh_packages_async(),
-                Self::refresh_aur_packages_async(),
-            )
-            .await;
-            match pacman {
-                Ok(updates) => refresh(Some(updates)),
-                Err(err) => {
-                    log::error!("Failed to refresh pacman packages: {err:#?}");
-                    refresh(None)
-                }
+            if !failed && let Ok(aur) = aur {
+                let mut aur = aur.into_iter().map(Package::from).collect::<Vec<_>>();
+                packages.append(&mut aur);
+            } else {
+                failed = true;
             }
-            match aur {
-                Ok(updates) => append_aur(Some(updates)),
-                Err(err) => {
-                    log::error!("Failed to refresh aur packages: {err:#?}");
-                    append_aur(None)
-                }
-            }
-        });
+            qt_thread
+                .queue(move |mut updates| {
+                    updates.as_mut().set_update_count(packages.len() as i32);
+                    updates.as_mut().set_refreshing(false);
+                    updates.as_mut().set_refreshing_failed(failed);
+                    updates.as_mut().begin_reset_model();
+                    updates.as_mut().rust_mut().packages = packages;
+                    updates.as_mut().end_reset_model();
+                })
+                .unwrap();
+        }));
     }
 }

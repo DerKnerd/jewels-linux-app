@@ -31,9 +31,11 @@ anyhow = "1"
 arboard = { version = "3", features = ["wl-clipboard-rs"] }
 clap = { version = "4", features = ["derive"] }
 configparser = "3"
-cpp = "0.5"
-cpp_build = "0.5"
-cstr = "0.2"
+cxx = "1"
+cxx-qt = "0.8"
+cxx-qt-lib = { version = "0.8", features = ["qt_full"] }
+cxx-qt-lib-extras = "0.8"
+cxx-qt-build = "0.8"
 env_logger = "0.11"
 file-owner = "0.1"
 futures-util = "0.3"
@@ -45,11 +47,8 @@ open = "5"
 pacmanconf = "3"
 procfs = "0.18"
 progress_bar = "1"
-qmetaobject = "0.2"
-qttypes = { version = "0.2", features = ["qtquick", "qtquickcontrols2"] }
 raur = "8"
 reqwest = { version = "0.13", features = ["rustls-native-certs", "rustls", "blocking", "json", "charset", "http2"], default-features = false }
-semver = "1"
 serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 srcinfo = "2"

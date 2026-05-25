@@ -1,62 +1,104 @@
 use crate::api;
 use crate::api::device::get_devices;
+use cxx_qt::{CxxQtType, Threading};
+use cxx_qt_lib::{QModelIndex, QString, QVariant};
 use libjewels::collector::send_device_data;
-use qmetaobject::prelude::*;
-use qmetaobject::{SimpleListItem, SimpleListModel};
-use std::cell::RefCell;
+use std::pin::Pin;
 
-#[allow(non_snake_case)]
-#[derive(QObject, Default)]
-pub struct Device {
-    base: qt_base_class!(trait QObject),
+#[cxx_qt::bridge]
+mod ffi {
+    unsafe extern "C++" {
+        include!(<QAbstractListModel>);
+        type QAbstractListModel;
 
-    id: qt_property!(QString; NOTIFY idChanged),
-    deviceType: qt_property!(QString; NOTIFY deviceTypeChanged),
-    model: qt_property!(QString; NOTIFY modelChanged),
-    manufacturer: qt_property!(QString; NOTIFY manufacturerChanged),
-    storage: qt_property!(f64; NOTIFY storageChanged),
-    ram: qt_property!(f64; NOTIFY ramChanged),
-    cpu: qt_property!(QString; NOTIFY cpuChanged),
-    os: qt_property!(QString; NOTIFY osChanged),
+        include!("cxx-qt-lib/qmodelindex.h");
+        type QModelIndex = cxx_qt_lib::QModelIndex;
 
-    idChanged: qt_signal!(),
-    deviceTypeChanged: qt_signal!(),
-    modelChanged: qt_signal!(),
-    manufacturerChanged: qt_signal!(),
-    storageChanged: qt_signal!(),
-    ramChanged: qt_signal!(),
-    cpuChanged: qt_signal!(),
-    osChanged: qt_signal!(),
-}
+        include!("cxx-qt-lib/qvariant.h");
+        type QVariant = cxx_qt_lib::QVariant;
 
-impl SimpleListItem for Device {
-    fn get(&self, role: i32) -> QVariant {
-        match role {
-            0 => self.deviceType.clone().into(),
-            1 => self.model.clone().into(),
-            2 => self.manufacturer.clone().into(),
-            3 => self.storage.clone().into(),
-            4 => self.ram.clone().into(),
-            5 => self.cpu.clone().into(),
-            6 => self.os.clone().into(),
-            _ => QVariant::default(),
-        }
+        include!("cxx-qt-lib/qstring.h");
+        type QString = cxx_qt_lib::QString;
+
+        include!("cxx-qt-lib/qhash.h");
+        type QHash_i32_QByteArray = cxx_qt_lib::QHash<cxx_qt_lib::QHashPair_i32_QByteArray>;
     }
 
-    fn names() -> Vec<QByteArray> {
-        vec![
-            "deviceType".into(),
-            "model".into(),
-            "manufacturer".into(),
-            "storage".into(),
-            "ram".into(),
-            "cpu".into(),
-            "os".into(),
-        ]
+    #[qenum(Jewels)]
+    enum JewelsRoles {
+        DeviceType,
+        Model,
+        Manufacturer,
+        Storage,
+        Ram,
+        Cpu,
+        Os,
+    }
+
+    impl cxx_qt::Threading for Jewels {}
+
+    #[auto_cxx_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[qproperty(QString, device_type, cxx_name = "deviceType")]
+        #[qproperty(QString, model)]
+        #[qproperty(QString, manufacturer)]
+        #[qproperty(f64, storage)]
+        #[qproperty(f64, ram)]
+        #[qproperty(QString, cpu)]
+        #[qproperty(QString, os)]
+        type Device = super::DeviceStruct;
+    }
+
+    #[auto_cxx_name]
+    #[auto_rust_name]
+    unsafe extern "RustQt" {
+        #[qobject]
+        #[qml_element]
+        #[base = QAbstractListModel]
+        #[qproperty(bool, is_loading)]
+        #[qproperty(bool, loading_failed)]
+        type Jewels = super::JewelsStruct;
+
+        #[cxx_override]
+        fn rowCount(&self, parent: &QModelIndex) -> i32;
+
+        #[cxx_override]
+        fn data(&self, index: &QModelIndex, role: i32) -> QVariant;
+
+        #[cxx_override]
+        fn roleNames(&self) -> QHash_i32_QByteArray;
+
+        #[inherit]
+        fn beginResetModel(self: Pin<&mut Self>);
+
+        #[inherit]
+        fn endResetModel(self: Pin<&mut Self>);
+
+        #[qinvokable]
+        fn sendData(&self);
+
+        #[qinvokable]
+        fn checkEolDevices(&self);
+
+        #[qinvokable]
+        fn loadDevices(self: Pin<&mut Self>);
     }
 }
 
-impl From<api::device::Device> for Device {
+#[derive(Default)]
+pub struct DeviceStruct {
+    device_type: QString,
+    model: QString,
+    manufacturer: QString,
+    storage: f64,
+    ram: f64,
+    cpu: QString,
+    os: QString,
+}
+
+impl From<api::device::Device> for DeviceStruct {
     fn from(value: api::device::Device) -> Self {
         let os =
             if value.os.version.clone().is_some_and(|val| {
@@ -68,57 +110,68 @@ impl From<api::device::Device> for Device {
             };
 
         Self {
-            base: Default::default(),
-            id: Default::default(),
-            deviceType: value.device_type.into(),
+            device_type: value.device_type.into(),
             model: value.model.into(),
             manufacturer: value.manufacturer.into(),
             storage: value.storage.into(),
             ram: value.ram.into(),
             cpu: value.cpu.model.into(),
             os: os.into(),
-            idChanged: Default::default(),
-            deviceTypeChanged: Default::default(),
-            modelChanged: Default::default(),
-            manufacturerChanged: Default::default(),
-            storageChanged: Default::default(),
-            ramChanged: Default::default(),
-            cpuChanged: Default::default(),
-            osChanged: Default::default(),
         }
     }
 }
 
-#[allow(non_snake_case)]
-#[derive(QObject, Default)]
-pub struct Jewels {
-    base: qt_base_class!(trait QObject),
-
-    isLoading: qt_property!(bool; NOTIFY isLoadingChanged),
-    loadingFailed: qt_property!(bool; NOTIFY loadingFailedChanged),
-    devices: qt_property!(RefCell<SimpleListModel<Device>>; CONST),
-
-    isLoadingChanged: qt_signal!(),
-    loadingFailedChanged: qt_signal!(),
-
-    sendData: qt_method!(
-        fn sendData(&self) {
-            self.send_data();
-        }
-    ),
-    checkEolDevices: qt_method!(
-        fn checkEolDevices(&self) {
-            self.check_eol_devices();
-        }
-    ),
-    loadDevices: qt_method!(
-        fn loadDevices(&mut self) {
-            self.load_devices();
-        }
-    ),
+#[derive(Default)]
+pub struct JewelsStruct {
+    is_loading: bool,
+    loading_failed: bool,
+    devices: Vec<DeviceStruct>,
 }
 
-impl Jewels {
+impl ffi::Jewels {
+    fn row_count(&self, _: &QModelIndex) -> i32 {
+        self.devices.len() as i32
+    }
+
+    fn role_names(&self) -> ffi::QHash_i32_QByteArray {
+        let mut hash = ffi::QHash_i32_QByteArray::default();
+        hash.insert(ffi::JewelsRoles::DeviceType.repr, "deviceType".into());
+        hash.insert(ffi::JewelsRoles::Model.repr, "model".into());
+        hash.insert(ffi::JewelsRoles::Manufacturer.repr, "manufacturer".into());
+        hash.insert(ffi::JewelsRoles::Storage.repr, "storage".into());
+        hash.insert(ffi::JewelsRoles::Ram.repr, "ram".into());
+        hash.insert(ffi::JewelsRoles::Cpu.repr, "cpu".into());
+        hash.insert(ffi::JewelsRoles::Os.repr, "os".into());
+        hash
+    }
+
+    fn data(&self, index: &ffi::QModelIndex, role: i32) -> QVariant {
+        let role = ffi::JewelsRoles { repr: role };
+
+        if let Some(DeviceStruct {
+            device_type,
+            model,
+            manufacturer,
+            storage,
+            ram,
+            cpu,
+            os,
+        }) = self.devices.get(index.row() as usize)
+        {
+            match role {
+                ffi::JewelsRoles::DeviceType => return device_type.into(),
+                ffi::JewelsRoles::Model => return model.into(),
+                ffi::JewelsRoles::Manufacturer => return manufacturer.into(),
+                ffi::JewelsRoles::Storage => return storage.into(),
+                ffi::JewelsRoles::Ram => return ram.into(),
+                ffi::JewelsRoles::Cpu => return cpu.into(),
+                ffi::JewelsRoles::Os => return os.into(),
+                _ => {}
+            }
+        }
+        QVariant::default()
+    }
+
     fn send_data(&self) {
         tokio::spawn(async move { send_device_data().await });
     }
@@ -129,35 +182,29 @@ impl Jewels {
         });
     }
 
-    fn load_devices(&mut self) {
-        self.isLoading = true;
-        self.loadingFailed = false;
-        self.isLoadingChanged();
-        self.loadingFailedChanged();
+    fn load_devices(mut self: Pin<&mut Self>) {
+        self.as_mut().set_is_loading(true);
+        self.as_mut().set_loading_failed(false);
 
-        let qptr = QPointer::from(&*self);
-        let set_devices = qmetaobject::queued_callback(
-            move |(failed, devices): (bool, Vec<api::device::Device>)| {
-                if let Some(this) = qptr.as_pinned() {
-                    let mut jewels_ref = this.borrow_mut();
-                    jewels_ref.isLoading = false;
-                    jewels_ref.loadingFailed = failed;
-
-                    jewels_ref.loadingFailedChanged();
-                    jewels_ref.isLoadingChanged();
-
-                    let mut my_devices = jewels_ref.devices.borrow_mut();
-                    my_devices.reset_data(devices.into_iter().map(Into::into).collect());
-                }
-            },
-        );
-
+        let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            if let Ok(devices) = get_devices().await {
-                set_devices((false, devices));
+            let (loading_failed, devices) = if let Ok(devices) = get_devices().await {
+                (false, devices)
             } else {
-                set_devices((true, vec![]));
-            }
+                (true, vec![])
+            };
+            qt_thread
+                .queue(move |mut jewels| {
+                    jewels.as_mut().set_is_loading(false);
+                    jewels.as_mut().set_loading_failed(loading_failed);
+                    jewels.as_mut().begin_reset_model();
+                    jewels.as_mut().rust_mut().devices = devices
+                        .into_iter()
+                        .map(Into::into)
+                        .collect::<Vec<DeviceStruct>>();
+                    jewels.as_mut().end_reset_model();
+                })
+                .unwrap();
         });
     }
 }
