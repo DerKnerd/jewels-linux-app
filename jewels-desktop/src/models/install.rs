@@ -4,9 +4,7 @@ use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QVariant};
 use futures_util::StreamExt;
-use libjewels::alpm::{DownloadProgress, InstallProgress, InstallablePackage, UpdatablePackage};
-use libjewels::aur::AurPackage;
-use libjewels::dbus::aur::AurProxy;
+use libjewels::alpm::{DownloadProgress, InstallProgress, InstallablePackage};
 use libjewels::dbus::get_bus;
 use libjewels::dbus::pacman::PacmanProxy;
 use libjewels::dbus::screensaver::ScreenSaverProxy;
@@ -251,6 +249,9 @@ impl ffi::Install {
     }
 
     fn perform_install(mut self: Pin<&mut Self>) {
+        if let Some(join_handle) = &self.join_handle {
+            join_handle.abort();
+        }
         self.as_mut().set_install_in_progress(true);
         self.as_mut().begin_reset_model();
         self.as_mut().rust_mut().packages = vec![];
@@ -312,7 +313,7 @@ impl ffi::Install {
         };
 
         let packages_to_install = self.rust().packages_to_install.clone();
-        tokio::spawn(async move {
+        self.as_mut().rust_mut().join_handle = Some(tokio::spawn(async move {
             let mut screen_saver_cookie = None;
             let _ = async {
                 let session_bus = Connection::session().await?;
@@ -395,6 +396,6 @@ impl ffi::Install {
             {
                 let _ = screen_saver_proxy.uninhibit(cookie).await;
             }
-        });
+        }));
     }
 }
