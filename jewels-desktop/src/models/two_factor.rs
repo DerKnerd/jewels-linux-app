@@ -1,5 +1,5 @@
 use crate::api;
-use crate::models::Owner;
+use crate::models::OwnerStruct as Owner;
 use qmetaobject::{
     QObject, QPointer, SimpleListItem, SimpleListModel, qt_base_class, qt_method, qt_property,
     qt_signal,
@@ -62,7 +62,7 @@ impl From<api::otp::OneTimePassword> for OneTimePassword {
         // Collect emails for easy QML comparisons
         let mut emails = QStringList::default();
         for u in shared_with_qt.clone() {
-            emails.push(u.email.clone());
+            emails.push(u.email.to_string().clone());
         }
 
         Self {

@@ -14,5 +14,6 @@ fn main() {
     )
     .file("src/models/login.rs")
     .file("src/models/jewels.rs")
+    .file("src/models/owners.rs")
     .build();
 }
