@@ -8,6 +8,7 @@ sha512sums=()
 depends=(
     "kirigami"
     "kirigami-addons"
+    "kitemmodels"
     "qt6-base"
     "qt6-declarative"
     "qt6-webview"
