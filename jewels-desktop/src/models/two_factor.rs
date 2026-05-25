@@ -1,4 +1,4 @@
-use crate::api;
+use crate::{api, with_model};
 use crate::api::owner::get_owners;
 use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
@@ -132,18 +132,10 @@ mod ffi {
     unsafe extern "RustQt" {
         #[qobject]
         #[qml_element]
-        #[qproperty(
-            *mut MyOneTimePasswordList,
-            my_one_time_passwords,
-            cxx_name = "myOneTimePasswords"
-        )]
-        #[qproperty(
-            *mut SharedOneTimePasswordList,
-            shared_one_time_passwords,
-            cxx_name = "sharedOneTimePasswords"
-        )]
+        #[qproperty(*mut MyOneTimePasswordList, my_one_time_passwords)]
+        #[qproperty(*mut SharedOneTimePasswordList, shared_one_time_passwords)]
         #[qproperty(bool, loading)]
-        #[qproperty(QStringList, shared_by_names, cxx_name = "sharedByNames")]
+        #[qproperty(QStringList, shared_by_names)]
         type OneTimePasswords = super::OneTimePasswordsStruct;
 
         #[qinvokable]
@@ -372,15 +364,6 @@ impl ffi::MyOneTimePasswordList {
     }
 }
 
-macro_rules! with_model {
-    ($ptr:expr, |$pin:ident| $body:expr) => {
-        if let Some(inner) = unsafe { $ptr.as_mut() } {
-            let mut $pin = unsafe { Pin::new_unchecked(inner) };
-            $body
-        }
-    };
-}
-
 impl ffi::OneTimePasswords {
     fn load_one_time_passwords(mut self: Pin<&mut Self>) {
         self.as_mut().set_loading(true);
@@ -408,12 +391,6 @@ impl ffi::OneTimePasswords {
                             model.as_mut().rust_mut().otps = my_otps;
                             model.as_mut().end_reset_model();
                         });
-                        // if let Some(inner) = unsafe { (*otps.as_mut().shared_one_time_passwords()).as_mut() } {
-                        //     let mut model = unsafe { Pin::new_unchecked(inner) };
-                        //     model.as_mut().begin_reset_model();
-                        //     model.as_mut().rust_mut().otps = shared_otps;
-                        //     model.as_mut().end_reset_model();
-                        // }
                         with_model!(*otps.as_mut().shared_one_time_passwords(), |model| {
                             model.as_mut().begin_reset_model();
                             model.as_mut().rust_mut().otps = shared_otps;

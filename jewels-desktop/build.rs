@@ -18,5 +18,6 @@ fn main() {
     .file("src/models/otp.rs")
     .file("src/models/owners.rs")
     .file("src/models/two_factor.rs")
+    .file("src/models/updates.rs")
     .build();
 }

@@ -126,7 +126,6 @@ pub struct JewelsStruct {
     is_loading: bool,
     loading_failed: bool,
     devices: Vec<DeviceStruct>,
-    pub(crate) join_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl ffi::Jewels {
@@ -188,7 +187,7 @@ impl ffi::Jewels {
         self.as_mut().set_loading_failed(false);
 
         let qt_thread = self.qt_thread();
-        self.rust_mut().join_handle = Some(tokio::spawn(async move {
+        tokio::spawn(async move {
             let (loading_failed, devices) = if let Ok(devices) = get_devices().await {
                 (false, devices)
             } else {
@@ -206,6 +205,6 @@ impl ffi::Jewels {
                     jewels.as_mut().end_reset_model();
                 })
                 .unwrap();
-        }));
+        });
     }
 }

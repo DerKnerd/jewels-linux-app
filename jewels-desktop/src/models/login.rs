@@ -1,4 +1,4 @@
-use cxx_qt::{CxxQtType, Threading};
+use cxx_qt::Threading;
 use cxx_qt_lib::QString;
 use libjewels::configuration::{JewelsConfiguration, load_config, write_config};
 use std::pin::Pin;
@@ -38,7 +38,6 @@ pub struct LoginStruct {
     token: QString,
     logged_in: bool,
     login_in_progress: bool,
-    pub(crate) join_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl Default for LoginStruct {
@@ -50,17 +49,12 @@ impl Default for LoginStruct {
             host: config.host.into(),
             token: config.token.into(),
             login_in_progress: false,
-            join_handle: None,
         }
     }
 }
 
 impl ffi::Login {
     fn logout(mut self: Pin<&mut Self>) {
-        if let Some(handle) = self.as_mut().rust_mut().join_handle.take() {
-            handle.abort();
-        }
-
         self.as_mut().set_host("".into());
         self.as_mut().set_token("".into());
         let _ = write_config(JewelsConfiguration::default());
@@ -69,13 +63,9 @@ impl ffi::Login {
     }
 
     fn login(mut self: Pin<&mut Self>) {
-        if let Some(handle) = self.as_mut().rust_mut().join_handle.take() {
-            handle.abort();
-        }
-
         self.as_mut().set_login_in_progress(true);
         let qt_thread = self.qt_thread();
-        self.rust_mut().join_handle = Some(tokio::spawn(async move {
+        tokio::spawn(async move {
             crate::authentication::start_listener().await;
             let config = load_config();
             qt_thread
@@ -91,6 +81,6 @@ impl ffi::Login {
                 log::error!("Error sending device data");
                 tokio::time::sleep(std::time::Duration::from_secs(300)).await;
             }
-        }));
+        });
     }
 }

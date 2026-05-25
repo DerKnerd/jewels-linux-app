@@ -1,3 +1,4 @@
+use cxx_qt::CxxQtType;
 use arboard::Clipboard as Arboard;
 use cxx_qt_lib::QString;
 use std::pin::Pin;
@@ -17,16 +18,29 @@ mod ffi {
         type Clipboard = super::ClipboardStruct;
 
         #[qinvokable]
-        #[cxx_name = "copyToClipboard"]
+        #[cxx_name = "copy"]
         fn copy_to_clipboard(self: Pin<&mut Self>, text: QString);
     }
 }
 
-#[derive(Default)]
-pub struct ClipboardStruct {}
+pub struct ClipboardStruct {
+    arboard: Arboard,
+}
+
+impl Default for ClipboardStruct {
+    fn default() -> Self {
+        Self {
+            arboard: Arboard::new().unwrap(),
+        }
+    }
+}
 
 impl ffi::Clipboard {
-    fn copy_to_clipboard(self: Pin<&mut Self>, text: QString) {
-        Arboard::new().unwrap().set_text(text.to_string()).unwrap();
+    fn copy_to_clipboard(mut self: Pin<&mut Self>, text: QString) {
+        self.as_mut()
+            .rust_mut()
+            .arboard
+            .set_text(text.to_string())
+            .unwrap();
     }
 }
