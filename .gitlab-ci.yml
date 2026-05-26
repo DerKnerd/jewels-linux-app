@@ -53,7 +53,7 @@ package:
     - cd $HOME
     - cargo build --release --all-features --bins
     - makepkg
-    - 'curl -X PUT https://packages.ulbricht.casa/api/packages/family/arch/family --user $UC_FORGEJO_USER:$UC_FORGEJO_KEY --header "Content-Type: application/octet-stream" --upload-file "$UC_PACKAGED_FILE"'
+    - curl --fail-with-body --request PUT --user "D$UC_FORGEJO_USER:$UC_FORGEJO_KEY" https://packages.ulbricht.casa/api/packages/family/arch/family --upload-file "$UC_PACKAGED_FILE"
   artifacts:
     paths:
       - $UC_PACKAGED_FILE
