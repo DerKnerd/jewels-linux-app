@@ -41,7 +41,7 @@ env_logger = "0.11"
 file-owner = "0.1"
 futures-util = "0.3"
 log = "0.4"
-machine-uid = "0.6.0"
+machine-uid = "0.6"
 notify-rust = "4"
 num_cpus = "1"
 open = "5"
@@ -53,15 +53,15 @@ reqwest = { version = "0.13", features = ["rustls-native-certs", "rustls", "bloc
 serde = { version = "1", features = ["derive"] }
 smbios-lib = "0.9"
 srcinfo = "2"
-sysinfo = { version = "0.39.2", features = ["serde"] }
+sysinfo = { version = "0.39", features = ["serde"] }
 termsize = "0.1"
 tokio = { version = "1", features = ["full"] }
-totp-rs = "5.7.0"
+totp-rs = "5.7"
 uuid = { version = "1", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
 xdg = "3"
 zbus = { version = "5", features = ["tokio"] }
-zbus_systemd = { version = "0.26000.0", features = ["systemd1"] }
+zbus_systemd = { version = "0.26000", features = ["systemd1"] }
 
 [dependencies]
 jewels-desktop = { path = "jewels-desktop", optional = true }
