@@ -65,7 +65,6 @@ pub async fn eol_check() {
         }
         Err(err) => {
             log::error!("Failed to get eol devices: {err}");
-            return;
         }
     }
 }

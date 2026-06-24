@@ -1,5 +1,5 @@
-use crate::{api, with_model};
 use crate::api::owner::get_owners;
+use crate::{api, with_model};
 use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QStringList, QVariant};
@@ -259,7 +259,7 @@ impl ffi::SharedOneTimePasswordList {
                     return can_edit.into();
                 }
                 ffi::SharedOneTimePasswordListRoles::IconSource => {
-                    let ref icon = get_icon_source(
+                    let icon = &get_icon_source(
                         *brand_icon_similarity,
                         *simple_icon_similarity,
                         brand_icon.to_string(),
@@ -341,7 +341,7 @@ impl ffi::MyOneTimePasswordList {
                 }
                 ffi::MyOneTimePasswordListRoles::CanEdit => return can_edit.into(),
                 ffi::MyOneTimePasswordListRoles::IconSource => {
-                    let ref icon = get_icon_source(
+                    let icon = &get_icon_source(
                         *brand_icon_similarity,
                         *simple_icon_similarity,
                         brand_icon.to_string(),
@@ -418,19 +418,19 @@ impl ffi::OneTimePasswords {
                     .filter(|o| emails.contains(&o.email))
                     .map(|owner| owner.id)
                     .collect::<Vec<i64>>();
-                if api::otp::share_one_time_password(otp_id, ids).await.is_ok() {
-                    if let Ok(otps) = api::otp::get_one_time_passwords().await {
-                        let my_otps = otps.my_one_time_passwords;
-                        qt_thread
-                            .queue(move |mut otps| {
-                                with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
-                                    model.as_mut().begin_reset_model();
-                                    model.as_mut().rust_mut().otps = my_otps;
-                                    model.as_mut().end_reset_model();
-                                });
-                            })
-                            .unwrap();
-                    }
+                if api::otp::share_one_time_password(otp_id, ids).await.is_ok()
+                    && let Ok(otps) = api::otp::get_one_time_passwords().await
+                {
+                    let my_otps = otps.my_one_time_passwords;
+                    qt_thread
+                        .queue(move |mut otps| {
+                            with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
+                                model.as_mut().begin_reset_model();
+                                model.as_mut().rust_mut().otps = my_otps;
+                                model.as_mut().end_reset_model();
+                            });
+                        })
+                        .unwrap();
                 }
             }
         });
@@ -442,19 +442,18 @@ impl ffi::OneTimePasswords {
             if api::otp::update_one_time_password(otp_id, account_name.into())
                 .await
                 .is_ok()
+                && let Ok(otps) = api::otp::get_one_time_passwords().await
             {
-                if let Ok(otps) = api::otp::get_one_time_passwords().await {
-                    let my_otps = otps.my_one_time_passwords;
-                    qt_thread
-                        .queue(move |mut otps| {
-                            with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
-                                model.as_mut().begin_reset_model();
-                                model.as_mut().rust_mut().otps = my_otps;
-                                model.as_mut().end_reset_model();
-                            });
-                        })
-                        .unwrap();
-                }
+                let my_otps = otps.my_one_time_passwords;
+                qt_thread
+                    .queue(move |mut otps| {
+                        with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
+                            model.as_mut().begin_reset_model();
+                            model.as_mut().rust_mut().otps = my_otps;
+                            model.as_mut().end_reset_model();
+                        });
+                    })
+                    .unwrap();
             }
         });
     }
@@ -462,19 +461,19 @@ impl ffi::OneTimePasswords {
     fn delete_otp(self: Pin<&mut Self>, otp_id: i64) {
         let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            if api::otp::delete_one_time_password(otp_id).await.is_ok() {
-                if let Ok(otps) = api::otp::get_one_time_passwords().await {
-                    let my_otps = otps.my_one_time_passwords;
-                    qt_thread
-                        .queue(move |mut otps| {
-                            with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
-                                model.as_mut().begin_reset_model();
-                                model.as_mut().rust_mut().otps = my_otps;
-                                model.as_mut().end_reset_model();
-                            });
-                        })
-                        .unwrap();
-                }
+            if api::otp::delete_one_time_password(otp_id).await.is_ok()
+                && let Ok(otps) = api::otp::get_one_time_passwords().await
+            {
+                let my_otps = otps.my_one_time_passwords;
+                qt_thread
+                    .queue(move |mut otps| {
+                        with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
+                            model.as_mut().begin_reset_model();
+                            model.as_mut().rust_mut().otps = my_otps;
+                            model.as_mut().end_reset_model();
+                        });
+                    })
+                    .unwrap();
             }
         });
     }

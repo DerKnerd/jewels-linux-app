@@ -48,7 +48,7 @@ impl AurBuilder {
         let mut stdout = child.stdout.take();
         let mut stderr = child.stderr.take();
 
-        let _ = tokio::spawn(async move {
+        tokio::spawn(async move {
             if let Some(mut stdout) = stdout.take() {
                 let mut buf = Vec::new();
                 if stdout.read_to_end(buf.as_mut()).await.is_ok() {
@@ -56,7 +56,7 @@ impl AurBuilder {
                 }
             }
         });
-        let _ = tokio::spawn(async move {
+        tokio::spawn(async move {
             if let Some(mut stderr) = stderr.take() {
                 let mut buf = Vec::new();
                 if stderr.read_to_end(buf.as_mut()).await.is_ok() {
@@ -79,10 +79,8 @@ impl AurBuilder {
         .await?;
 
         let srcinfo_path = pkg_dir.join(".SRCINFO");
-        if srcinfo_path.exists() {
-            if let Ok(info) = Srcinfo::from_path(srcinfo_path) {
-                import_gpg_keys(package, info).await?;
-            }
+        if srcinfo_path.exists() && let Ok(info) = Srcinfo::from_path(srcinfo_path) {
+            import_gpg_keys(package, info).await?;
         }
 
         log::info!("Building {}...", package);

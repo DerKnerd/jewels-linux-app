@@ -27,11 +27,7 @@ pub async fn update_system() -> anyhow::Result<()> {
 
         let aur_proxy = AurProxy::new(&conn).await?;
         let upgrade_aur_packages =
-            if let Ok(upgrade_aur_packages) = aur_proxy.get_available_updates().await {
-                upgrade_aur_packages
-            } else {
-                vec![]
-            };
+            aur_proxy.get_available_updates().await.unwrap_or_default();
         let aur_packages_count = upgrade_aur_packages.len();
 
         pacman.install_updates(1).await?;

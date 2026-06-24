@@ -2,7 +2,7 @@ mod build;
 pub mod consts;
 mod gpg;
 
-use crate::alpm::{AlpmHelper, DownloadProgressSender, LogMessageSender, InstallProgressSender};
+use crate::alpm::{AlpmHelper, DownloadProgressSender, InstallProgressSender, LogMessageSender};
 use crate::aur::build::AurBuilder;
 use crate::aur::consts::{JEWELS_BUILD_DIR, JEWELS_PACKAGE_DIR, JEWELS_USER};
 use raur::Raur;
@@ -86,16 +86,15 @@ impl AurHelper {
 
         log::info!("Compiling packages to upgrade...");
         for (name, local_ver) in foreign_packages {
-            if let Some(&aur_pkg) = aur_map.get(name.as_str()) {
-                if alpm::vercmp(aur_pkg.version.as_str(), local_ver.as_str())
+            if let Some(&aur_pkg) = aur_map.get(name.as_str())
+                && alpm::vercmp(aur_pkg.version.as_str(), local_ver.as_str())
                     == std::cmp::Ordering::Greater
-                {
-                    packages_to_upgrade.push(AurPackage {
-                        name: aur_pkg.name.clone(),
-                        version: aur_pkg.version.clone(),
-                        description: aur_pkg.description.clone().unwrap_or_default(),
-                    })
-                }
+            {
+                packages_to_upgrade.push(AurPackage {
+                    name: aur_pkg.name.clone(),
+                    version: aur_pkg.version.clone(),
+                    description: aur_pkg.description.clone().unwrap_or_default(),
+                })
             }
         }
 

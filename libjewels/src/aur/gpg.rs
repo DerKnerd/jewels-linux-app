@@ -26,10 +26,7 @@ pub async fn import_gpg_keys(package: &str, info: Srcinfo) -> std::io::Result<()
             .await?;
         if !result.success() {
             log::error!("Failed to import GPG key {}: {}", key_id, result);
-            return Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to import GPG key",
-            ));
+            return Err(std::io::Error::other("Failed to import GPG key"));
         }
     }
 

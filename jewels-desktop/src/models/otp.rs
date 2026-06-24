@@ -37,7 +37,7 @@ impl ffi::Otp {
             30,
             Secret::Encoded(secret_key.to_string()).to_bytes()?,
         );
-        Ok(totp.generate_current()?.to_string().into())
+        Ok(totp.generate_current()?.to_string())
     }
 
     fn generate(&self, secret_key: QString) -> QString {

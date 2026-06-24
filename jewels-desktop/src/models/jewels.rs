@@ -113,8 +113,8 @@ impl From<api::device::Device> for DeviceStruct {
             device_type: value.device_type.into(),
             model: value.model.into(),
             manufacturer: value.manufacturer.into(),
-            storage: value.storage.into(),
-            ram: value.ram.into(),
+            storage: value.storage,
+            ram: value.ram,
             cpu: value.cpu.model.into(),
             os: os.into(),
         }

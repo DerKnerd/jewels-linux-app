@@ -185,20 +185,18 @@ impl AlpmHelper {
                         log::error!("Failed to send download progress: {}", err);
                     }
                 }
-                DownloadEvent::Completed(evt) => {
-                    if !matches!(evt.result, DownloadResult::Failed) {
-                        log::info!("{filename}: {}/{}", evt.total, evt.total);
-                        if !sender.is_closed()
-                            && let Err(err) = sender
-                                .send(DownloadProgress {
-                                    status: evt.total,
-                                    total: evt.total,
-                                    filename: filename.to_string(),
-                                })
-                                .await
-                        {
-                            log::error!("Failed to send download progress: {}", err);
-                        }
+                DownloadEvent::Completed(evt) if !matches!(evt.result, DownloadResult::Failed) => {
+                    log::info!("{filename}: {}/{}", evt.total, evt.total);
+                    if !sender.is_closed()
+                        && let Err(err) = sender
+                            .send(DownloadProgress {
+                                status: evt.total,
+                                total: evt.total,
+                                filename: filename.to_string(),
+                            })
+                            .await
+                    {
+                        log::error!("Failed to send download progress: {}", err);
                     }
                 }
                 _ => {}
@@ -379,10 +377,7 @@ impl AlpmHelper {
 
         for name in package_names {
             let pkg_name = name.as_str();
-            let pkg = handle
-                .syncdbs()
-                .iter()
-                .find_map(|db| db.pkg(pkg_name).map(|pkg| pkg).ok());
+            let pkg = handle.syncdbs().iter().find_map(|db| db.pkg(pkg_name).ok());
             if let Some(pkg) = pkg {
                 handle
                     .trans_add_pkg(pkg)
@@ -418,7 +413,7 @@ impl AlpmHelper {
         let results = dbs
             .iter()
             .flat_map(|db| db.search([query.as_str()].iter()))
-            .flat_map(|pkgs| pkgs)
+            .flatten()
             .filter(|pkg| localdb.pkg(pkg.name()).is_err())
             .map(|pkg| InstallablePackage {
                 name: pkg.name().to_string(),

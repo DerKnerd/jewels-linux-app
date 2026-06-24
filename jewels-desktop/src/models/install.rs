@@ -242,7 +242,7 @@ impl ffi::Install {
             self.as_mut()
                 .rust_mut()
                 .packages_to_install
-                .retain(|pkg| pkg.to_string() != name);
+                .retain(|pkg| pkg != &name);
         } else {
             self.as_mut().rust_mut().packages_to_install.push(name);
         }
