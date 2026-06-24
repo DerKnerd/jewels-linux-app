@@ -2,7 +2,7 @@
 Name=Jewels
 Comment=Jewels Desktop Client
 Version=4.0.0
-Exec=jewels-desktop
+Exec=jewels
 Icon=jewels
 Type=Application
 Terminal=false
