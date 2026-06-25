@@ -21,11 +21,6 @@ stages:
   variables:
     CARGO_HOME: $CI_PROJECT_DIR/.cargo
     QMAKE: /bin/qmake6
-  cache:
-    key: $CI_PROJECT_NAME
-    paths:
-      - $CI_PROJECT_DIR/target/
-      - $CI_PROJECT_DIR/.cargo/
 
 lint:
   extends: .base-cargo
@@ -41,6 +36,7 @@ build:
 
 package:
   extends: .base
+  image: registry.ulbricht.casa/docker-images/arch-linux-plasma-build:latest
   stage: package
   variables:
     ARCH: amd64
