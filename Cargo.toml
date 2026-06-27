@@ -61,7 +61,7 @@ uuid = { version = "1", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
 xdg = "3"
 zbus = { version = "5", features = ["tokio"] }
-zbus_systemd = { version = "0.26000", features = ["systemd1"] }
+zbus_systemd = { version = "0.26100", features = ["systemd1"] }
 
 [dependencies]
 jewels-desktop = { path = "jewels-desktop", optional = true }
