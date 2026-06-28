@@ -26,8 +26,6 @@ impl AurBuilder {
         Ok(())
     }
 
-    /// Spawn a process, forward every output line as an event, and fail on
-    /// non-zero exit.
     async fn execute_command(
         &self,
         program: &str,
