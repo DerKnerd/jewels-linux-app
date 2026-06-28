@@ -11,6 +11,71 @@ Kirigami.ScrollablePage {
     objectName: "UpdatesPage"
     title: "Updates"
 
+    header: Controls.ToolBar {
+        id: toolbar
+
+        visible: (updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed) || (updates.updateCount > 0 && !updates.refreshing) || (updates.refreshingFailed && !updates.refreshing)
+
+        RowLayout {
+            anchors.fill: parent
+
+            Kirigami.InlineMessage {
+                id: updatesMessage
+
+                Layout.alignment: Qt.AlignTop
+                Layout.fillWidth: true
+                text: `Du hast aktuell ${updates.updateCount} verfügbare Updates.`
+                visible: updates.updateCount > 0 && !updates.refreshing
+
+                actions: [
+                    Kirigami.Action {
+                        text: "Jetzt aktualisieren"
+                        visible: !updates.updateInProgress
+
+                        onTriggered: {
+                            updatesMessage.text = "Die Updates werden installiert. Bitte warte ein bisschen, du siehst unten den Fortschritt.";
+                            updates.updateSystem();
+                        }
+                    }
+                ]
+            }
+            Kirigami.InlineMessage {
+                id: noUpdatesMessage
+
+                Layout.alignment: Qt.AlignTop
+                Layout.fillWidth: true
+                text: "Super, dein Rechner ist aktuell. Es gibt nichts zu tun."
+                type: Kirigami.MessageType.Positive
+                visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
+
+                actions: [
+                    Kirigami.Action {
+                        text: "Such nochmal"
+
+                        onTriggered: updates.refreshCache()
+                    }
+                ]
+            }
+            Kirigami.InlineMessage {
+                id: refreshFailedMessage
+
+                Layout.alignment: Qt.AlignTop
+                Layout.fillWidth: true
+                text: "Leider konnten die neuesten Updates nicht abgerufen werden. Du kannst es jederzeit erneut versuchen."
+                type: Kirigami.MessageType.Error
+                visible: updates.refreshingFailed && !updates.refreshing
+
+                actions: [
+                    Kirigami.Action {
+                        text: "Erneut versuchen"
+
+                        onTriggered: updates.refreshCache()
+                    }
+                ]
+            }
+        }
+    }
+
     Updates {
         id: updates
 
@@ -21,83 +86,32 @@ Kirigami.ScrollablePage {
             updates.downloadStatus3.reset();
             updates.downloadStatus4.reset();
         }
-        onUpdateFinishedChanged: updates.refreshCache()
+        onRefreshingChanged: {
+            updatesMessage.text = `Du hast aktuell ${updates.updateCount} verfügbare Updates.`;
+        }
+        onUpdateFinishedChanged: {
+            updates.refreshCache();
+        }
+        onUpdateFailedChanged: {
+            updates.refreshCache();
+        }
     }
     ColumnLayout {
         anchors.fill: parent
         spacing: Kirigami.Units.largeSpacing
 
-        Kirigami.Heading {
-            Layout.alignment: Qt.AlignTop
-            Layout.fillWidth: true
-            text: "Verfügbare Updates"
-        }
         Controls.BusyIndicator {
             id: updatesBusyIndicator
 
             Layout.alignment: Qt.AlignTop | Qt.AlignHCenter
             visible: updates.refreshing
         }
-        Kirigami.InlineMessage {
-            id: updatesMessage
-
-            Layout.alignment: Qt.AlignTop
-            Layout.fillWidth: true
-            text: `Du hast aktuell ${updates.updateCount} verfügbare Updates.`
-            visible: updates.updateCount > 0 && !updates.refreshing
-
-            actions: [
-                Kirigami.Action {
-                    text: "Jetzt aktualisieren"
-                    visible: !updates.updateInProgress
-
-                    onTriggered: {
-                        updatesMessage.text = "Die Updates werden installiert. Bitte warte ein bisschen, " + "du siehst unten den Fortschritt.";
-                        updates.updateSystem();
-                    }
-                }
-            ]
-        }
-        Kirigami.InlineMessage {
-            id: noUpdatesMessage
-
-            Layout.alignment: Qt.AlignTop
-            Layout.fillWidth: true
-            text: "Super, dein Rechner ist aktuell. Es gibt nichts zu tun."
-            type: Kirigami.MessageType.Positive
-            visible: updates.updateCount === 0 && !updates.refreshing && !updates.refreshingFailed
-
-            actions: [
-                Kirigami.Action {
-                    text: "Such nochmal"
-
-                    onTriggered: updates.refreshCache()
-                }
-            ]
-        }
-        Kirigami.InlineMessage {
-            id: refreshFailedMessage
-
-            Layout.alignment: Qt.AlignTop
-            Layout.fillWidth: true
-            text: "Leider konnten die neuesten Updates nicht abgerufen werden. " + "Du kannst es jederzeit erneut versuchen."
-            type: Kirigami.MessageType.Error
-            visible: updates.refreshingFailed && !updates.refreshing
-
-            actions: [
-                Kirigami.Action {
-                    text: "Erneut versuchen"
-
-                    onTriggered: updates.refreshCache()
-                }
-            ]
-        }
         GridLayout {
             Layout.alignment: Qt.AlignTop
             columnSpacing: Kirigami.Units.smallSpacing
             columns: 3
             rowSpacing: Kirigami.Units.smallSpacing
-            visible: updates.updateInProgress || !updates.downloadFinished
+            visible: updates.updateInProgress
 
             Controls.Label {
                 Layout.maximumWidth: 150

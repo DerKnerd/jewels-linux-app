@@ -336,7 +336,8 @@ impl ffi::Updates {
                             .icon("jewels")
                             .hint(Hint::Resident(true))
                             .timeout(Timeout::Never)
-                            .show();
+                            .show_async()
+                            .await;
                     }
                 };
                 let update_aur = {
