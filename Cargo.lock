@@ -3148,7 +3148,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
  "fastrand",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
@@ -4424,9 +4424,9 @@ dependencies = [
 
 [[package]]
 name = "zbus_systemd"
-version = "0.26000.0"
+version = "0.26100.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40c8310483ff4a77492d04a90bef30f40938059b4a4b4f7e456dda335d816cb6"
+checksum = "4508893b3fc7829cbd654a318942b0716fb08da8a272a646a970f382cfb7d27e"
 dependencies = [
  "serde",
  "zbus",
