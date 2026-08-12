@@ -1,6 +1,6 @@
-use std::time::{SystemTime, UNIX_EPOCH};
 use cxx_qt_lib::QString;
-use totp_rs::{Algorithm, Secret, TOTP};
+use std::time::{SystemTime, UNIX_EPOCH};
+use totp_rs::{Algorithm, Secret};
 
 #[cxx_qt::bridge]
 mod ffi {
@@ -30,14 +30,14 @@ pub struct OtpStruct {}
 
 impl ffi::Otp {
     fn generate_code(&self, secret_key: String) -> anyhow::Result<String> {
-        let totp = TOTP::new_unchecked(
-            Algorithm::SHA1,
-            6,
-            0,
-            30,
-            Secret::Encoded(secret_key.to_string()).to_bytes()?,
-        );
-        Ok(totp.generate_current()?.to_string())
+        let totp = totp_rs::Builder::new()
+            .with_algorithm(Algorithm::SHA1)
+            .with_digits(6)
+            .with_skew(0)
+            .with_step_duration(30)
+            .with_secret(Secret::try_from_base32(secret_key)?)
+            .build()?;
+        Ok(totp.generate_current().to_string())
     }
 
     fn generate(&self, secret_key: QString) -> QString {
