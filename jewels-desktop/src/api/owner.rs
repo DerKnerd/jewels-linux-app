@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use libjewels::configuration::load_config;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Owner {
     pub id: i64,

@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use crate::api::owner::Owner;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MyOneTimePassword {
     pub id: i64,
@@ -18,7 +18,7 @@ pub struct MyOneTimePassword {
     pub shared_with: Vec<Owner>,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SharedOneTimePassword {
     pub id: i64,
@@ -33,7 +33,7 @@ pub struct SharedOneTimePassword {
     pub shared_by: Owner,
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OneTimePasswords {
     pub my_one_time_passwords: Vec<MyOneTimePassword>,

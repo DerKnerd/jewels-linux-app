@@ -8,8 +8,9 @@ pub mod authentication;
 mod eol;
 pub mod models;
 pub mod updater;
+pub mod otp;
 
-extern crate cxx;
+// extern crate cxx;
 
 fn run_app() {
     let mut app = QApplication::new();

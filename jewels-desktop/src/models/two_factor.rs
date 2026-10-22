@@ -1,5 +1,5 @@
 use crate::api::owner::get_owners;
-use crate::{api, with_model};
+use crate::{otp, with_model};
 use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QStringList, QVariant};
@@ -157,12 +157,12 @@ mod ffi {
 
 #[derive(Default)]
 pub struct SharedOneTimePasswordListStruct {
-    pub otps: Vec<api::otp::SharedOneTimePassword>,
+    pub otps: Vec<otp::SharedOneTimePassword>,
 }
 
 #[derive(Default)]
 pub struct MyOneTimePasswordListStruct {
-    pub otps: Vec<api::otp::MyOneTimePassword>,
+    pub otps: Vec<otp::MyOneTimePassword>,
 }
 
 pub struct OneTimePasswordsStruct {
@@ -232,7 +232,7 @@ impl ffi::SharedOneTimePasswordList {
     fn data(&self, index: &QModelIndex, role: i32) -> QVariant {
         let role = ffi::SharedOneTimePasswordListRoles { repr: role };
 
-        if let Some(api::otp::SharedOneTimePassword {
+        if let Some(otp::SharedOneTimePassword {
             id,
             account_name,
             account_issuer,
@@ -318,7 +318,7 @@ impl ffi::MyOneTimePasswordList {
     fn data(&self, index: &QModelIndex, role: i32) -> QVariant {
         let role = ffi::MyOneTimePasswordListRoles { repr: role };
 
-        if let Some(api::otp::MyOneTimePassword {
+        if let Some(otp::MyOneTimePassword {
             id,
             account_name,
             account_issuer,
@@ -399,8 +399,8 @@ impl ffi::OneTimePasswords {
                     .filter(|o| emails.contains(&o.email))
                     .map(|owner| owner.id)
                     .collect::<Vec<i64>>();
-                if api::otp::share_one_time_password(otp_id, ids).await.is_ok()
-                    && let Ok(otps) = api::otp::get_one_time_passwords().await
+                if otp::share_one_time_password(otp_id, ids).await.is_ok()
+                    && let Ok(otps) = otp::get_one_time_passwords().await
                 {
                     let my_otps = otps.my_one_time_passwords;
                     qt_thread
@@ -420,10 +420,10 @@ impl ffi::OneTimePasswords {
     fn edit_otp(self: Pin<&mut Self>, otp_id: i64, account_name: QString) {
         let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            if api::otp::update_one_time_password(otp_id, account_name.into())
+            if otp::update_one_time_password(otp_id, account_name.into())
                 .await
                 .is_ok()
-                && let Ok(otps) = api::otp::get_one_time_passwords().await
+                && let Ok(otps) = otp::get_one_time_passwords().await
             {
                 let my_otps = otps.my_one_time_passwords;
                 qt_thread
@@ -442,8 +442,8 @@ impl ffi::OneTimePasswords {
     fn delete_otp(self: Pin<&mut Self>, otp_id: i64) {
         let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            if api::otp::delete_one_time_password(otp_id).await.is_ok()
-                && let Ok(otps) = api::otp::get_one_time_passwords().await
+            if otp::delete_one_time_password(otp_id).await.is_ok()
+                && let Ok(otps) = otp::get_one_time_passwords().await
             {
                 let my_otps = otps.my_one_time_passwords;
                 qt_thread
@@ -462,7 +462,7 @@ impl ffi::OneTimePasswords {
     fn filter(self: Pin<&mut Self>, query: QString) {
         let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            if let Ok(otps) = api::otp::get_one_time_passwords().await {
+            if let Ok(otps) = otp::get_one_time_passwords().await {
                 let shared_names = otps
                     .shared_one_time_passwords
                     .iter()

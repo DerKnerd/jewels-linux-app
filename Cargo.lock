@@ -1295,6 +1295,12 @@ dependencies = [
 
 [[package]]
 name = "half"
+version = "1.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b43ede17f21864e81be2fa654110bf1e793774238d86ef8555c37e6519c0403"
+
+[[package]]
+name = "half"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ea2d84b969582b4b1864a92dc5d27cd2b77b622a8d79306834f1be5ba20d84b"
@@ -1736,8 +1742,10 @@ dependencies = [
  "futures-util",
  "libjewels",
  "log",
+ "microxdg",
  "notify-rust",
  "open",
+ "pickledb",
  "progress_bar",
  "reqwest",
  "serde",
@@ -1992,6 +2000,12 @@ checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "microxdg"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd0ba94daabea2c803df477d4dc1d37a6f15726e4bed53be7067022ddb89328e"
 
 [[package]]
 name = "mime"
@@ -2376,6 +2390,17 @@ dependencies = [
  "fixedbitset",
  "hashbrown 0.15.5",
  "indexmap",
+]
+
+[[package]]
+name = "pickledb"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c53a5ade47760e8cc4986bdc5e72daeffaaaee64cbc374f9cfe0a00c1cd87b1f"
+dependencies = [
+ "serde",
+ "serde_cbor",
+ "serde_json",
 ]
 
 [[package]]
@@ -2953,6 +2978,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_cbor"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bef2ebfde456fb76bbcf9f59315333decc4fda0b2b44b420243c11e0f5ec1f5"
+dependencies = [
+ "half 1.8.3",
+ "serde",
+]
+
+[[package]]
 name = "serde_core"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3307,7 +3342,7 @@ checksum = "b63feaf3343d35b6ca4d50483f94843803b0f51634937cc2ec519fc32232bc52"
 dependencies = [
  "fax",
  "flate2",
- "half",
+ "half 2.7.1",
  "quick-error",
  "weezl",
  "zune-jpeg",
