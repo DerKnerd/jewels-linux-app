@@ -15,8 +15,10 @@ cxx-qt-lib-extras = { workspace = true }
 env_logger = { workspace = true }
 futures-util = { workspace = true }
 log = { workspace = true }
+microxdg = { workspace = true }
 notify-rust = { workspace = true }
 open = { workspace = true }
+pickledb = { workspace = true }
 progress_bar = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

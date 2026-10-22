@@ -16,6 +16,35 @@ Kirigami.ScrollablePage {
         oneTimePasswords.loadOneTimePasswords();
     }
 
+    actions: [
+        Kirigami.Action {
+            text: "Aktualisieren"
+
+            onTriggered: oneTimePasswords.loadOneTimePasswords()
+        }
+    ]
+
+    header: Controls.ToolBar {
+        id: toolbar
+
+        RowLayout {
+            anchors.fill: parent
+
+            Kirigami.SearchField {
+                id: searchField
+
+                Layout.alignment: Qt.AlignHCenter
+                Layout.fillWidth: true
+                delaySearch: true
+                placeholderText: "Zwei Faktor Codes durchsuchen"
+
+                onAccepted: {
+                    oneTimePasswords.filter(searchField.text);
+                }
+            }
+        }
+    }
+
     OneTimePasswords {
         id: oneTimePasswords
     }

@@ -734,33 +734,16 @@ dependencies = [
 
 [[package]]
 name = "cxx-qt"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01d46ee3abd1539d109fdc009e3e3fc5a041c57aef5e3a80cba887338fc0748f"
+checksum = "af6a52cbe33f8a23c6cc7dafb628819b89af6536102c3976f5efc33a038d4a82"
 dependencies = [
  "cxx",
- "cxx-qt-build 0.9.1",
+ "cxx-qt-build",
  "cxx-qt-macro",
- "qt-build-utils 0.9.1",
+ "qt-build-utils",
  "static_assertions",
  "thiserror 1.0.69",
-]
-
-[[package]]
-name = "cxx-qt-build"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57aded134d0a8d39ab6d6af639f5cd0f46affd2a6b3d9ae87848fd85113f143c"
-dependencies = [
- "cc",
- "codespan-reporting 0.11.1",
- "cxx-gen",
- "cxx-qt-gen 0.9.1",
- "proc-macro2",
- "qt-build-utils 0.9.1",
- "quote",
- "serde",
- "serde_json",
 ]
 
 [[package]]
@@ -772,27 +755,12 @@ dependencies = [
  "cc",
  "codespan-reporting 0.11.1",
  "cxx-gen",
- "cxx-qt-gen 0.10.0",
+ "cxx-qt-gen",
  "proc-macro2",
- "qt-build-utils 0.10.0",
+ "qt-build-utils",
  "quote",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "cxx-qt-gen"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "735d282c0b9cb39db7e55846e7d8f57be6ec3c4edb6037bb04f50caf88a6ee6a"
-dependencies = [
- "clang-format",
- "convert_case",
- "cxx-gen",
- "indoc",
- "proc-macro2",
- "quote",
- "syn 2.0.119",
 ]
 
 [[package]]
@@ -812,35 +780,35 @@ dependencies = [
 
 [[package]]
 name = "cxx-qt-lib"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3483e43878378f0e4789033e9e93dfc04242b879389a1084766fc5d17f292b6b"
+checksum = "1e3c9fea8106d4bbe438d15c1242acd38f4869ca4f6d2a0b19e1f0dbbf23a50e"
 dependencies = [
  "cxx",
  "cxx-qt",
- "cxx-qt-build 0.9.1",
- "qt-build-utils 0.9.1",
+ "cxx-qt-build",
+ "qt-build-utils",
 ]
 
 [[package]]
 name = "cxx-qt-lib-extras"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caecf40d614ac4cc448ac6baf462bf4c0d1d70c5a48d6b790e9e735c8d39ef97"
+checksum = "a1760564c2d3afbb98961ac76f5606ef1b5324ce3b214dad7cdcffddf5ea021f"
 dependencies = [
  "cxx",
  "cxx-qt",
- "cxx-qt-build 0.9.1",
+ "cxx-qt-build",
  "cxx-qt-lib",
 ]
 
 [[package]]
 name = "cxx-qt-macro"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb44925fc99e07859ee49bdc89ea519bb2052016154ffa4f4898c0cb4d86c81e"
+checksum = "cb794f10a4d27bfbd810eb8bf7fd7d9a0b0b5cefcd86a4c7b13ae3f8d4fa0169"
 dependencies = [
- "cxx-qt-gen 0.9.1",
+ "cxx-qt-gen",
  "proc-macro2",
  "quote",
  "syn 2.0.119",
@@ -1327,6 +1295,12 @@ dependencies = [
 
 [[package]]
 name = "half"
+version = "1.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b43ede17f21864e81be2fa654110bf1e793774238d86ef8555c37e6519c0403"
+
+[[package]]
+name = "half"
 version = "2.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ea2d84b969582b4b1864a92dc5d27cd2b77b622a8d79306834f1be5ba20d84b"
@@ -1745,7 +1719,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jewels"
-version = "5.0.2"
+version = "5.1.0"
 dependencies = [
  "clap",
  "jewels-desktop",
@@ -1755,21 +1729,23 @@ dependencies = [
 
 [[package]]
 name = "jewels-desktop"
-version = "5.0.2"
+version = "5.1.0"
 dependencies = [
  "anyhow",
  "arboard",
  "cxx",
  "cxx-qt",
- "cxx-qt-build 0.10.0",
+ "cxx-qt-build",
  "cxx-qt-lib",
  "cxx-qt-lib-extras",
  "env_logger",
  "futures-util",
  "libjewels",
  "log",
+ "microxdg",
  "notify-rust",
  "open",
+ "pickledb",
  "progress_bar",
  "reqwest",
  "serde",
@@ -1778,18 +1754,18 @@ dependencies = [
  "totp-rs",
  "warp",
  "xdg",
- "zbus",
+ "zbus 6.0.0",
 ]
 
 [[package]]
 name = "jewelsd"
-version = "5.0.2"
+version = "5.1.0"
 dependencies = [
  "env_logger",
  "libjewels",
  "log",
  "tokio",
- "zbus",
+ "zbus 6.0.0",
  "zbus_systemd",
 ]
 
@@ -1903,7 +1879,7 @@ checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
 
 [[package]]
 name = "libjewels"
-version = "5.0.2"
+version = "5.1.0"
 dependencies = [
  "alpm",
  "alpm-utils",
@@ -1924,7 +1900,7 @@ dependencies = [
  "tokio",
  "uuid",
  "xdg",
- "zbus",
+ "zbus 6.0.0",
  "zbus_systemd",
 ]
 
@@ -2024,6 +2000,12 @@ checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
 ]
+
+[[package]]
+name = "microxdg"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd0ba94daabea2c803df477d4dc1d37a6f15726e4bed53be7067022ddb89328e"
 
 [[package]]
 name = "mime"
@@ -2137,7 +2119,7 @@ dependencies = [
  "mac-notification-sys",
  "serde",
  "tauri-winrt-notification",
- "zbus",
+ "zbus 5.19.0",
 ]
 
 [[package]]
@@ -2411,6 +2393,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pickledb"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c53a5ade47760e8cc4986bdc5e72daeffaaaee64cbc374f9cfe0a00c1cd87b1f"
+dependencies = [
+ "serde",
+ "serde_cbor",
+ "serde_json",
+]
+
+[[package]]
 name = "pin-project"
 version = "1.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2563,20 +2556,6 @@ name = "pxfm"
 version = "0.1.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d55d956fa96f5ec02be2e13af0e20391a5aa83d6a074e3ad368959d0fab299ea"
-
-[[package]]
-name = "qt-build-utils"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e575368c069f599b9918e592ce6eb6b4bc04d52b6825f7fcc89500f9e1de96b"
-dependencies = [
- "anyhow",
- "cc",
- "semver",
- "serde",
- "thiserror 1.0.69",
- "which",
-]
 
 [[package]]
 name = "qt-build-utils"
@@ -2999,6 +2978,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde_cbor"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2bef2ebfde456fb76bbcf9f59315333decc4fda0b2b44b420243c11e0f5ec1f5"
+dependencies = [
+ "half 1.8.3",
+ "serde",
+]
+
+[[package]]
 name = "serde_core"
 version = "1.0.229"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3353,7 +3342,7 @@ checksum = "b63feaf3343d35b6ca4d50483f94843803b0f51634937cc2ec519fc32232bc52"
 dependencies = [
  "fax",
  "flate2",
- "half",
+ "half 2.7.1",
  "quick-error",
  "weezl",
  "zune-jpeg",
@@ -4409,15 +4398,43 @@ dependencies = [
  "rustix",
  "serde",
  "serde_repr",
+ "tracing",
+ "uds_windows",
+ "uuid",
+ "windows-sys 0.61.2",
+ "winnow",
+ "zbus_macros 5.19.0",
+ "zbus_names",
+ "zvariant",
+]
+
+[[package]]
+name = "zbus"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "266223222c9d81e5966455a9da0783e35d56a7ccab79a03c2366b2d98f8fc8a9"
+dependencies = [
+ "async-trait",
+ "bitflags 2.13.2",
+ "endi",
+ "futures-core",
+ "hex",
+ "libc",
+ "ordered-stream",
+ "rustix",
+ "serde",
+ "serde_repr",
+ "socket2",
  "tokio",
  "tracing",
  "uds_windows",
  "uuid",
  "windows-sys 0.61.2",
  "winnow",
- "zbus_macros",
- "zbus_names",
- "zvariant",
+ "zbus_macros 6.0.0",
+ "zbus_utils",
+ "zcheapstr",
+ "zruntime",
 ]
 
 [[package]]
@@ -4436,6 +4453,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "zbus_macros"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "69191782481ef4e0ac88ca487347c52e08bb85cceb2a163b79f7281fe5be0a3c"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.9",
+ "zbus_utils",
+]
+
+[[package]]
 name = "zbus_names"
 version = "4.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4448,12 +4477,25 @@ dependencies = [
 
 [[package]]
 name = "zbus_systemd"
-version = "0.26200.0"
+version = "0.26201.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0b9e5661e7491cf89fbd8402c1c61320f655c5cf69eaae22c6bd350298b065d"
+checksum = "670a53e453e8c9f29ed81e109cace34f4d9d30aedca4c40d5f1c83937c03a5fd"
 dependencies = [
  "serde",
- "zbus",
+ "zbus 6.0.0",
+]
+
+[[package]]
+name = "zbus_utils"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c27a055b114bd9fc3686e90f62bd1fe612d523fc5f620bac3b1d2f42d3f6cab8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde",
+ "syn 3.0.9",
+ "winnow",
 ]
 
 [[package]]
@@ -4570,6 +4612,20 @@ name = "zmij"
 version = "1.0.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "29666d0abbfad1e3dc4dcf6144730dd3a3ab225bbbdac83319345b1b44ccfc1b"
+
+[[package]]
+name = "zruntime"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "467fd80a2014d186319f14b81aef027aa466712f355c90158a0e6b39de60726d"
+dependencies = [
+ "futures-core",
+ "futures-io",
+ "rustix",
+ "socket2",
+ "tracing",
+ "windows-sys 0.61.2",
+]
 
 [[package]]
 name = "zune-core"

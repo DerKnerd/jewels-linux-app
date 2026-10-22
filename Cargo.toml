@@ -14,9 +14,9 @@ path = "src/bin/jewels-desktop.rs"
 required-features = ["jewels-desktop"]
 
 [workspace.package]
-version = "5.0.2"
+version = "5.1.0"
 edition = "2024"
-rust-version = "1.95.0"
+rust-version = "1.99.0"
 
 [workspace]
 members = [
@@ -33,18 +33,20 @@ arboard = { version = "3", features = ["wl-clipboard-rs"] }
 clap = { version = "4", features = ["derive"] }
 configparser = "3"
 cxx = "1"
-cxx-qt = "0.9"
-cxx-qt-lib = { version = "0.9", features = ["qt_full"] }
-cxx-qt-lib-extras = "0.9"
+cxx-qt = "0.10"
+cxx-qt-lib = { version = "0.10", features = ["qt_full"] }
+cxx-qt-lib-extras = "0.10"
 cxx-qt-build = "0.10"
 env_logger = "0.11"
 file-owner = "0.1"
 futures-util = "0.3"
 log = "0.4"
 machine-uid = "0.6"
+microxdg = "0.2"
 notify-rust = "4"
 num_cpus = "1"
 open = "5"
+pickledb = { version = "0.5", features = ["cbor"] }
 pacmanconf = "3"
 procfs = "0.18"
 progress_bar = "1"
@@ -60,8 +62,8 @@ totp-rs = "6"
 uuid = { version = "1", features = ["v4"] }
 warp = { version = "0.4", features = ["server"] }
 xdg = "3"
-zbus = { version = "5", features = ["tokio"] }
-zbus_systemd = { version = "0.26200", features = ["systemd1"] }
+zbus = { version = "6", features = ["tokio"] }
+zbus_systemd = { version = "0.26201", features = ["systemd1"] }
 
 [dependencies]
 jewels-desktop = { path = "jewels-desktop", optional = true }

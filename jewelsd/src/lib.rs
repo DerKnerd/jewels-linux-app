@@ -8,15 +8,10 @@ pub async fn start_jewelsd() -> std::io::Result<()> {
 
     let conn = get_builder()
         .await
-        .map_err(std::io::Error::other)?
         .name("cloud.ulbricht.jewels.JewelsKit")
-        .map_err(std::io::Error::other)?
         .serve_at("/cloud/ulbricht/jewels/Wireguard", Wireguard::default())
-        .map_err(std::io::Error::other)?
         .serve_at("/cloud/ulbricht/jewels/Pacman", Pacman::default())
-        .map_err(std::io::Error::other)?
         .serve_at("/cloud/ulbricht/jewels/Aur", Aur::default())
-        .map_err(std::io::Error::other)?
         .build()
         .await;
     if let Err(err) = conn {

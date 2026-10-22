@@ -1,5 +1,5 @@
 use crate::api::owner::get_owners;
-use crate::{api, with_model};
+use crate::{otp, with_model};
 use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QStringList, QVariant};
@@ -142,6 +142,9 @@ mod ffi {
         fn loadOneTimePasswords(self: Pin<&mut Self>);
 
         #[qinvokable]
+        fn filter(self: Pin<&mut Self>, query: QString);
+
+        #[qinvokable]
         fn shareOtp(self: Pin<&mut Self>, otp_id: i64, shared_with_emails: QStringList);
 
         #[qinvokable]
@@ -154,12 +157,12 @@ mod ffi {
 
 #[derive(Default)]
 pub struct SharedOneTimePasswordListStruct {
-    pub otps: Vec<api::otp::SharedOneTimePassword>,
+    pub otps: Vec<otp::SharedOneTimePassword>,
 }
 
 #[derive(Default)]
 pub struct MyOneTimePasswordListStruct {
-    pub otps: Vec<api::otp::MyOneTimePassword>,
+    pub otps: Vec<otp::MyOneTimePassword>,
 }
 
 pub struct OneTimePasswordsStruct {
@@ -229,7 +232,7 @@ impl ffi::SharedOneTimePasswordList {
     fn data(&self, index: &QModelIndex, role: i32) -> QVariant {
         let role = ffi::SharedOneTimePasswordListRoles { repr: role };
 
-        if let Some(api::otp::SharedOneTimePassword {
+        if let Some(otp::SharedOneTimePassword {
             id,
             account_name,
             account_issuer,
@@ -315,7 +318,7 @@ impl ffi::MyOneTimePasswordList {
     fn data(&self, index: &QModelIndex, role: i32) -> QVariant {
         let role = ffi::MyOneTimePasswordListRoles { repr: role };
 
-        if let Some(api::otp::MyOneTimePassword {
+        if let Some(otp::MyOneTimePassword {
             id,
             account_name,
             account_issuer,
@@ -368,16 +371,120 @@ impl ffi::OneTimePasswords {
     fn load_one_time_passwords(mut self: Pin<&mut Self>) {
         self.as_mut().set_loading(true);
 
+        with_model!(*self.as_mut().my_one_time_passwords(), |model| {
+            model.as_mut().begin_reset_model();
+            model.as_mut().rust_mut().otps = vec![];
+            model.as_mut().end_reset_model();
+        });
+        with_model!(*self.as_mut().shared_one_time_passwords(), |model| {
+            model.as_mut().begin_reset_model();
+            model.as_mut().rust_mut().otps = vec![];
+            model.as_mut().end_reset_model();
+        });
+
+        self.filter(QString::default())
+    }
+
+    fn share_otp(self: Pin<&mut Self>, otp_id: i64, shared_with_emails: QStringList) {
+        let emails = shared_with_emails
+            .into_iter()
+            .map(|e| e.to_string())
+            .collect::<Vec<_>>();
+
         let qt_thread = self.qt_thread();
         tokio::spawn(async move {
-            if let Ok(otps) = api::otp::get_one_time_passwords().await {
+            if let Ok(owners) = get_owners().await {
+                let ids = owners
+                    .iter()
+                    .filter(|o| emails.contains(&o.email))
+                    .map(|owner| owner.id)
+                    .collect::<Vec<i64>>();
+                if otp::share_one_time_password(otp_id, ids).await.is_ok()
+                    && let Ok(otps) = otp::get_one_time_passwords().await
+                {
+                    let my_otps = otps.my_one_time_passwords;
+                    qt_thread
+                        .queue(move |mut otps| {
+                            with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
+                                model.as_mut().begin_reset_model();
+                                model.as_mut().rust_mut().otps = my_otps;
+                                model.as_mut().end_reset_model();
+                            });
+                        })
+                        .unwrap();
+                }
+            }
+        });
+    }
+
+    fn edit_otp(self: Pin<&mut Self>, otp_id: i64, account_name: QString) {
+        let qt_thread = self.qt_thread();
+        tokio::spawn(async move {
+            if otp::update_one_time_password(otp_id, account_name.into())
+                .await
+                .is_ok()
+                && let Ok(otps) = otp::get_one_time_passwords().await
+            {
+                let my_otps = otps.my_one_time_passwords;
+                qt_thread
+                    .queue(move |mut otps| {
+                        with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
+                            model.as_mut().begin_reset_model();
+                            model.as_mut().rust_mut().otps = my_otps;
+                            model.as_mut().end_reset_model();
+                        });
+                    })
+                    .unwrap();
+            }
+        });
+    }
+
+    fn delete_otp(self: Pin<&mut Self>, otp_id: i64) {
+        let qt_thread = self.qt_thread();
+        tokio::spawn(async move {
+            if otp::delete_one_time_password(otp_id).await.is_ok()
+                && let Ok(otps) = otp::get_one_time_passwords().await
+            {
+                let my_otps = otps.my_one_time_passwords;
+                qt_thread
+                    .queue(move |mut otps| {
+                        with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
+                            model.as_mut().begin_reset_model();
+                            model.as_mut().rust_mut().otps = my_otps;
+                            model.as_mut().end_reset_model();
+                        });
+                    })
+                    .unwrap();
+            }
+        });
+    }
+
+    fn filter(self: Pin<&mut Self>, query: QString) {
+        let qt_thread = self.qt_thread();
+        tokio::spawn(async move {
+            if let Ok(otps) = otp::get_one_time_passwords().await {
                 let shared_names = otps
                     .shared_one_time_passwords
                     .iter()
                     .map(|otp| otp.shared_by.name.clone())
                     .collect::<BTreeSet<_>>();
-                let shared_otps = otps.shared_one_time_passwords;
-                let my_otps = otps.my_one_time_passwords;
+                let query = query.to_string().to_lowercase();
+                let shared_otps = otps
+                    .shared_one_time_passwords
+                    .into_iter()
+                    .filter(|otp| {
+                        otp.account_name.to_lowercase().contains(&query)
+                            || otp.account_issuer.to_lowercase().contains(&query)
+                    })
+                    .collect::<Vec<_>>();
+                let my_otps = otps
+                    .my_one_time_passwords
+                    .into_iter()
+                    .filter(|otp| {
+                        otp.account_name.to_lowercase().contains(&query)
+                            || otp.account_issuer.to_lowercase().contains(&query)
+                    })
+                    .collect::<Vec<_>>();
                 qt_thread
                     .queue(move |mut otps| {
                         let mut names = QStringList::default();
@@ -398,80 +505,6 @@ impl ffi::OneTimePasswords {
                         });
 
                         otps.as_mut().set_loading(false);
-                    })
-                    .unwrap();
-            }
-        });
-    }
-
-    fn share_otp(self: Pin<&mut Self>, otp_id: i64, shared_with_emails: QStringList) {
-        let emails = shared_with_emails
-            .into_iter()
-            .map(|e| e.to_string())
-            .collect::<Vec<_>>();
-
-        let qt_thread = self.qt_thread();
-        tokio::spawn(async move {
-            if let Ok(owners) = get_owners().await {
-                let ids = owners
-                    .iter()
-                    .filter(|o| emails.contains(&o.email))
-                    .map(|owner| owner.id)
-                    .collect::<Vec<i64>>();
-                if api::otp::share_one_time_password(otp_id, ids).await.is_ok()
-                    && let Ok(otps) = api::otp::get_one_time_passwords().await
-                {
-                    let my_otps = otps.my_one_time_passwords;
-                    qt_thread
-                        .queue(move |mut otps| {
-                            with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
-                                model.as_mut().begin_reset_model();
-                                model.as_mut().rust_mut().otps = my_otps;
-                                model.as_mut().end_reset_model();
-                            });
-                        })
-                        .unwrap();
-                }
-            }
-        });
-    }
-
-    fn edit_otp(self: Pin<&mut Self>, otp_id: i64, account_name: QString) {
-        let qt_thread = self.qt_thread();
-        tokio::spawn(async move {
-            if api::otp::update_one_time_password(otp_id, account_name.into())
-                .await
-                .is_ok()
-                && let Ok(otps) = api::otp::get_one_time_passwords().await
-            {
-                let my_otps = otps.my_one_time_passwords;
-                qt_thread
-                    .queue(move |mut otps| {
-                        with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
-                            model.as_mut().begin_reset_model();
-                            model.as_mut().rust_mut().otps = my_otps;
-                            model.as_mut().end_reset_model();
-                        });
-                    })
-                    .unwrap();
-            }
-        });
-    }
-
-    fn delete_otp(self: Pin<&mut Self>, otp_id: i64) {
-        let qt_thread = self.qt_thread();
-        tokio::spawn(async move {
-            if api::otp::delete_one_time_password(otp_id).await.is_ok()
-                && let Ok(otps) = api::otp::get_one_time_passwords().await
-            {
-                let my_otps = otps.my_one_time_passwords;
-                qt_thread
-                    .queue(move |mut otps| {
-                        with_model!(*otps.as_mut().my_one_time_passwords(), |model| {
-                            model.as_mut().begin_reset_model();
-                            model.as_mut().rust_mut().otps = my_otps;
-                            model.as_mut().end_reset_model();
-                        });
                     })
                     .unwrap();
             }
