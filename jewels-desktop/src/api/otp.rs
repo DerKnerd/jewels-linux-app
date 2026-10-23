@@ -45,6 +45,7 @@ pub async fn get_one_time_passwords() -> Result<OneTimePasswords, reqwest::Error
 
     let client = reqwest::Client::new();
     let res = client
+        // .get(format!("https://google.com/api/one-time-password"))
         .get(format!("{}/api/one-time-password", config.host))
         .bearer_auth(config.token)
         .send()
