@@ -52,7 +52,7 @@ pub async fn store_cached_one_time_passwords(
     collection
         .create_item(
             "Jewels One Time Passwords",
-            HashMap::from(attributes),
+            attributes,
             &json,
             true,
             "text/plain",
