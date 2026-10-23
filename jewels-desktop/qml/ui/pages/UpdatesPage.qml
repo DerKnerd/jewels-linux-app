@@ -194,18 +194,39 @@ Kirigami.ScrollablePage {
                 Layout.minimumWidth: 150
                 elide: Text.ElideRight
                 text: updates.installPackage
-                visible: updates.updateInProgress && updates.downloadFinished
+                visible: updates.updateInProgress && updates.downloadFinished && !updates.flatpakInstalling
             }
             Controls.ProgressBar {
                 Layout.fillWidth: true
                 from: 0
                 to: updates.installHowMany
                 value: updates.installCurrent
-                visible: updates.updateInProgress && updates.downloadFinished
+                visible: updates.updateInProgress && updates.downloadFinished && !updates.flatpakInstalling
             }
             Controls.Label {
                 text: `${updates.installCurrent} von ${updates.installHowMany}`
-                visible: updates.updateInProgress && updates.downloadFinished
+                visible: updates.updateInProgress && updates.downloadFinished && !updates.flatpakInstalling
+            }
+            Controls.Label {
+                Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
+                elide: Text.ElideRight
+                text: updates.flatpakPackage
+                visible: updates.updateInProgress && updates.downloadFinished && updates.flatpakInstalling
+            }
+            Controls.ProgressBar {
+                Layout.fillWidth: true
+                from: 0
+                to: 100
+                value: updates.flatpakProgress
+                visible: updates.updateInProgress && updates.downloadFinished && updates.flatpakInstalling
+            }
+            Controls.Label {
+                Layout.maximumWidth: 150
+                Layout.minimumWidth: 150
+                elide: Text.ElideRight
+                text: updates.flatpakStatus
+                visible: updates.updateInProgress && updates.downloadFinished && updates.flatpakInstalling
             }
         }
         Item {

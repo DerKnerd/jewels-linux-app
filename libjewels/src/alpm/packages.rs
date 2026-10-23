@@ -18,6 +18,13 @@ pub struct InstallProgress {
 }
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
+pub struct FlatpakProgress {
+    pub package: String,
+    pub percent: i32,
+    pub status: String,
+}
+
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
 pub struct DownloadProgress {
     pub filename: String,
     pub status: i64,

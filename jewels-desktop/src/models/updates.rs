@@ -4,13 +4,16 @@ use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QVariant};
 use futures_util::StreamExt;
-use libjewels::alpm::{DownloadProgress, InstallProgress, UpdatablePackage};
+use libflatpak::prelude::{InstallationExt, InstalledRefExt, RefExt, RemoteExt, TransactionExt};
+use libflatpak::{Transaction, gio, glib};
+use libjewels::alpm::{DownloadProgress, FlatpakProgress, InstallProgress, UpdatablePackage};
 use libjewels::aur::AurPackage;
 use libjewels::dbus::aur::AurProxy;
 use libjewels::dbus::get_bus;
 use libjewels::dbus::pacman::PacmanProxy;
 use libjewels::dbus::screensaver::ScreenSaverProxy;
 use notify_rust::{Hint, Notification, Timeout, Urgency};
+use std::collections::HashMap;
 use std::pin::Pin;
 use tokio::select;
 use zbus::Connection;
@@ -30,8 +33,10 @@ async fn refresh_aur_packages_async() -> zbus::Result<Vec<AurPackage>> {
 enum UpdateStatus {
     Download(DownloadProgress),
     Update(InstallProgress),
+    Flatpak(FlatpakProgress),
     Complete,
     Error,
+    FlatpakStart,
 }
 
 #[cxx_qt::bridge]
@@ -92,6 +97,10 @@ mod ffi {
         #[qproperty(i32, install_percent)]
         #[qproperty(usize, install_how_many)]
         #[qproperty(usize, install_current)]
+        #[qproperty(bool, flatpak_installing)]
+        #[qproperty(QString, flatpak_package)]
+        #[qproperty(QString, flatpak_status)]
+        #[qproperty(i32, flatpak_progress)]
         type Updates = super::UpdatesStruct;
 
         #[qinvokable]
@@ -153,6 +162,10 @@ pub struct UpdatesStruct {
     install_percent: i32,
     install_how_many: usize,
     install_current: usize,
+    flatpak_installing: bool,
+    flatpak_package: QString,
+    flatpak_status: QString,
+    flatpak_progress: i32,
     join_handle: Option<tokio::task::JoinHandle<()>>,
 }
 
@@ -273,16 +286,60 @@ impl ffi::Updates {
                         this.as_mut().set_install_how_many(progress.howmany);
                         this.as_mut().set_install_current(progress.current);
                     }
+                    UpdateStatus::Flatpak(progress) => {
+                        this.as_mut().set_download_finished(true);
+                        this.as_mut().set_flatpak_package(progress.package.into());
+                        this.as_mut().set_flatpak_progress(progress.percent);
+                        this.as_mut().set_flatpak_status(progress.status.into());
+                    }
+                    UpdateStatus::FlatpakStart => {
+                        this.as_mut().set_download_finished(true);
+                        this.as_mut().set_update_in_progress(true);
+                        this.as_mut().set_flatpak_installing(true);
+                        this.as_mut().set_flatpak_package("Flatpaks".into());
+                    }
                     UpdateStatus::Complete | UpdateStatus::Error => {
                         this.as_mut().set_update_finished(true);
                         this.as_mut().set_update_in_progress(false);
+                        this.as_mut().set_flatpak_installing(false);
                     }
                 })
                 .unwrap();
         };
+        let notify_error = {
+            let refresh_status = refresh_status.clone();
+            || async move {
+                refresh_status(UpdateStatus::Error);
+                let _ = Notification::new()
+                    .summary("Fehler beim Updaten")
+                    .body("Die Updates haben leider nicht geklappt. Du kannst es noch einmal versuchen, wenn das auch nicht hilft, wende dich an den Support.")
+                    .appname("jewels")
+                    .urgency(Urgency::Critical)
+                    .icon("jewels")
+                    .hint(Hint::Resident(true))
+                    .timeout(Timeout::Never)
+                    .show_async()
+                    .await;
+            }
+        };
+        let notify_success = {
+            let refresh_status = refresh_status.clone();
+            || async move {
+                refresh_status(UpdateStatus::Complete);
+                let _ = Notification::new()
+                    .summary("Dein Rechner ist aktuell")
+                    .body("Super, die Updates wurden erfolgreich installiert und dein Rechner ist jetzt auf dem neuesten Stand.")
+                    .appname("jewels")
+                    .icon("jewels")
+                    .show_async()
+                    .await;
+            }
+        };
         tokio::spawn(async move {
+            let notify_error = notify_error.clone();
+            let notify_error_done = notify_error.clone();
             let mut screen_saver_cookie = None;
-            let _ = async {
+            let res = async {
                 let session_bus = Connection::session().await?;
                 let screen_saver_proxy = ScreenSaverProxy::new(&session_bus).await?;
                 let cookie = screen_saver_proxy
@@ -311,39 +368,9 @@ impl ffi::Updates {
                     refresh_status(UpdateStatus::Error);
                 }
 
-                let notify_success = {
-                    let refresh_status = refresh_status.clone();
-                    || async move {
-                        refresh_status(UpdateStatus::Complete);
-                        let _ = Notification::new()
-                            .summary("Dein Rechner ist aktuell")
-                            .body("Super, die Updates wurden erfolgreich installiert und dein Rechner ist jetzt auf dem neuesten Stand.")
-                            .appname("jewels")
-                            .icon("jewels")
-                            .show_async()
-                            .await;
-                    }
-                };
-                let notify_error = {
-                    let refresh_status = refresh_status.clone();
-                    || async move {
-                        refresh_status(UpdateStatus::Error);
-                        let _ = Notification::new()
-                            .summary("Fehler beim Updaten")
-                            .body("Die Updates haben leider nicht geklappt. Du kannst es noch einmal versuchen, wenn das auch nicht hilft, wende dich an den Support.")
-                            .appname("jewels")
-                            .urgency(Urgency::Critical)
-                            .icon("jewels")
-                            .hint(Hint::Resident(true))
-                            .timeout(Timeout::Never)
-                            .show_async()
-                            .await;
-                    }
-                };
                 let update_aur = {
                     let refresh_status = refresh_status.clone();
                     let notify_error = notify_error.clone();
-                    let notify_success = notify_success.clone();
 
                     move || async move {
                         if let Some(aur_proxy) = aur_proxy {
@@ -399,7 +426,6 @@ impl ffi::Updates {
                                         }
                                     },
                                     Some(_) = finished.next() => {
-                                        notify_success().await;
                                         break;
                                     }
                                     Some(_) = failure.next() => {
@@ -409,15 +435,6 @@ impl ffi::Updates {
                                     else => break
                                 }
                             }
-                        } else {
-                            refresh_status(UpdateStatus::Complete);
-                            let _ = Notification::new()
-                                .summary("Dein Rechner ist aktuell")
-                                .body("Super, die Updates wurden erfolgreich installiert und dein Rechner ist jetzt auf dem neuesten Stand.")
-                                .appname("jewels")
-                                .icon("jewels")
-                                .show_async()
-                                .await;
                         }
 
                         Ok(()) as zbus::Result<()>
@@ -439,8 +456,6 @@ impl ffi::Updates {
                         Some(_) = finished.next() => {
                             if aur_packages_count > 0 {
                                 let _ = update_aur().await;
-                            } else {
-                                notify_success().await;
                             }
                             break;
                         }
@@ -452,8 +467,70 @@ impl ffi::Updates {
                     }
                 }
 
+                refresh_status(UpdateStatus::FlatpakStart);
+
+                let none_gio = None::<&gio::Cancellable>;
+                let installation = libflatpak::Installation::new_system(none_gio).map_err(|_| zbus::Error::Unsupported)?;
+                let remotes = installation.list_remotes(none_gio).map_err(|_| zbus::Error::Unsupported)?;
+                for remote in remotes {
+                    if let Some(name) = remote.name() {
+                        let _ = installation.update_remote_sync(name.as_str(), none_gio);
+                    }
+                }
+
+                let refs = installation.list_installed_refs_for_update(none_gio).map_err(|_| zbus::Error::Unsupported)?;
+                let transaction = Transaction::for_installation(&installation, none_gio).map_err(|_| zbus::Error::Unsupported)?;
+                transaction.set_no_interaction(true);
+
+                let mut name_ref_map = HashMap::new();
+
+                for ref_ in &refs {
+                    if let Some(name) = ref_.format_ref() {
+                        if let Err(err) = transaction.add_update(name.as_str(), &[], None) {
+                            log::error!("Failed to add update: {}", err);
+                        }
+                        name_ref_map.insert(name.clone().to_string(), ref_.appdata_name().map(|it| it.to_string()).unwrap_or_default());
+                    }
+                }
+
+                {
+                    let refresh_status = refresh_status.clone();
+                    transaction.connect_new_operation(move |_, operation, progress| {
+                        if let Some(ref_) = operation.get_ref().map(|it| it.to_string()) {
+                            let parsed_ref = libflatpak::Ref::parse(ref_.as_str()).unwrap();
+                            let mut name = name_ref_map
+                                .get(ref_.as_str())
+                                .cloned()
+                                .unwrap_or(parsed_ref.name().unwrap().to_string());
+                            if name.is_empty() {
+                                name = parsed_ref.name().unwrap().to_string();
+                            }
+                            let refresh_status = refresh_status.clone();
+                            progress.connect_changed(move |progress| {
+                                refresh_status(UpdateStatus::Flatpak(FlatpakProgress {
+                                    package: name.to_string(),
+                                    percent: progress.progress(),
+                                    status: progress
+                                        .status()
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_default(),
+                                }));
+                            });
+                        }
+                    });
+                }
+
+                transaction.run(none_gio).map_err(|_| zbus::Error::Unsupported)?;
+
                 Ok(()) as zbus::Result<()>
-            }.await;
+            }
+                .await;
+
+            if res.is_ok() {
+                notify_success().await;
+            } else {
+                notify_error_done().await;
+            }
 
             if let Ok(session_bus) = Connection::session().await
                 && let Ok(screen_saver_proxy) = ScreenSaverProxy::new(&session_bus).await
@@ -490,6 +567,54 @@ impl ffi::Updates {
             } else {
                 failed = true;
             }
+
+            if !failed {
+                failed = async {
+                    let none_gio = None::<&gio::Cancellable>;
+                    let installation = libflatpak::Installation::new_system(none_gio)?;
+                    let remotes = installation.list_remotes(none_gio)?;
+                    for remote in remotes {
+                        if let Some(name) = remote.name() {
+                            let _ = installation.update_remote_sync(name.as_str(), none_gio);
+                        }
+                    }
+
+                    let refs = installation.list_installed_refs_for_update(none_gio)?;
+
+                    let mut flatpak_packages = refs
+                        .into_iter()
+                        .filter_map(|ref_| {
+                            if let Some(description) =
+                                ref_.appdata_summary().map(|it| it.to_string())
+                                && let Some(name) = ref_.appdata_name().map(|it| it.to_string())
+                            {
+                                let version = if let Some(version) =
+                                    ref_.appdata_version().map(|it| it.to_string())
+                                {
+                                    version
+                                } else {
+                                    ref_.branch()
+                                        .map(|it| it.to_string())
+                                        .unwrap_or("master".to_string())
+                                };
+                                Some(Package {
+                                    name: name.into(),
+                                    version: version.into(),
+                                    description: description.into(),
+                                })
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                    packages.append(&mut flatpak_packages);
+
+                    Ok(()) as Result<(), glib::Error>
+                }
+                .await
+                .is_err();
+            }
+
             qt_thread
                 .queue(move |mut updates| {
                     updates.as_mut().set_update_count(packages.len() as i32);
