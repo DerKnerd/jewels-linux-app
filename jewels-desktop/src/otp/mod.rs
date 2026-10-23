@@ -1,4 +1,4 @@
-mod database;
+pub mod keyring;
 
 pub use crate::api::otp as api;
 pub use crate::api::otp::MyOneTimePassword;
@@ -8,15 +8,13 @@ pub use crate::api::otp::delete_one_time_password;
 pub use crate::api::otp::share_one_time_password;
 pub use crate::api::otp::update_one_time_password;
 
-pub use crate::otp::database::open_otp_cache;
-
 pub async fn get_one_time_passwords() -> Result<OneTimePasswords, std::io::Error> {
     if let Ok(otps) = api::get_one_time_passwords().await {
-        if let Err(err) = database::store_cached_one_time_passwords(otps.clone()) {
+        if let Err(err) = keyring::store_cached_one_time_passwords(otps.clone()).await {
             log::warn!("Failed to store cached one-time passwords: {}", err);
         }
         Ok(otps)
     } else {
-        database::get_cached_one_time_passwords()
+        keyring::get_cached_one_time_passwords().await
     }
 }

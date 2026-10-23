@@ -18,10 +18,11 @@ log = { workspace = true }
 microxdg = { workspace = true }
 notify-rust = { workspace = true }
 open = { workspace = true }
-pickledb = { workspace = true }
 progress_bar = { workspace = true }
 reqwest = { workspace = true }
+secret-service = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 termsize = { workspace = true }
 tokio = { workspace = true }
 totp-rs = { workspace = true }
