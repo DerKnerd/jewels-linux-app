@@ -14,7 +14,7 @@ path = "src/bin/jewels-desktop.rs"
 required-features = ["jewels-desktop"]
 
 [workspace.package]
-version = "5.1.0"
+version = "5.1.1"
 edition = "2024"
 rust-version = "1.99.0"
 

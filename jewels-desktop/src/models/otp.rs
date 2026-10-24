@@ -36,15 +36,16 @@ impl ffi::Otp {
             .with_skew(0)
             .with_step_duration(30)
             .with_secret(Secret::try_from_base32(secret_key)?)
-            .build()?;
+            .build_noncompliant();
         Ok(totp.generate_current().to_string())
     }
 
     fn generate(&self, secret_key: QString) -> QString {
-        if let Ok(code) = self.generate_code(secret_key.to_string()) {
-            code.into()
-        } else {
-            "Fehler".into()
+        match self.generate_code(secret_key.to_string()) {
+            Ok(code) => code.into(),
+            Err(err)=> {
+                log::error!("Failed to generate OTP code: {err}");
+                "Fehler".into() }
         }
     }
 

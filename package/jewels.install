@@ -9,7 +9,6 @@ post_install() {
 post_upgrade() {
   systemctl daemon-reload
   systemctl enable --now jewelsd.service
-  systemctl restart jewelsd.service
   systemctl reload dbus
   systemd-sysusers
   ln -sf /usr/bin/jewels /usr/bin/jewels-desktop
