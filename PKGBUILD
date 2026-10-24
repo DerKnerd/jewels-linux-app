@@ -9,6 +9,7 @@ depends=(
     "kirigami"
     "kirigami-addons"
     "kitemmodels"
+    "flatpak"
     "qt6-base"
     "qt6-declarative"
     "qt6-webview"

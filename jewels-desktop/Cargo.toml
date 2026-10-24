@@ -14,8 +14,8 @@ cxx-qt-lib = { workspace = true }
 cxx-qt-lib-extras = { workspace = true }
 env_logger = { workspace = true }
 futures-util = { workspace = true }
+libflatpak = { workspace = true }
 log = { workspace = true }
-microxdg = { workspace = true }
 notify-rust = { workspace = true }
 open = { workspace = true }
 progress_bar = { workspace = true }
