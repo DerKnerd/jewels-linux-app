@@ -44,7 +44,7 @@ pub(crate) fn clear_stale_pacman_lock() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let mut sys = System::new_all();
+    let mut sys = System::new_all()?;
     sys.refresh_all();
 
     for process in sys.processes().values() {

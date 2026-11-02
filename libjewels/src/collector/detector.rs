@@ -65,8 +65,8 @@ fn get_block_devices() -> Result<Vec<Drive>, Box<dyn std::error::Error>> {
     Ok(devices)
 }
 
-pub fn collect_device_info() -> Device {
-    let mut sys = System::new_all();
+pub fn collect_device_info() -> anyhow::Result<Device> {
+    let mut sys = System::new_all()?;
     sys.refresh_all();
 
     let cpus = sys.cpus();
@@ -89,7 +89,7 @@ pub fn collect_device_info() -> Device {
     let hostname = System::host_name();
     let os = OperatingSystem {
         name: System::name().unwrap_or(UNKNOWN_VALUE.into()),
-        version: System::os_version(),
+        version: System::os_version().ok(),
     };
     let kernel = Kernel {
         version: System::kernel_version().unwrap_or(UNKNOWN_VALUE.into()),
@@ -109,9 +109,9 @@ pub fn collect_device_info() -> Device {
 
     let drives = get_block_devices().ok();
 
-    Device {
+    Ok(Device {
         id: machine_uid::get().unwrap_or(uuid::Uuid::new_v4().to_string()),
-        hostname,
+        hostname: hostname.ok(),
         model,
         manufacturer,
         os: Some(os),
@@ -122,5 +122,5 @@ pub fn collect_device_info() -> Device {
         mainboard: Some(mainboard),
         kernel: Some(kernel),
         drives,
-    }
+    })
 }
