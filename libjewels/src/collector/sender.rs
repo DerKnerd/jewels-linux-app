@@ -3,7 +3,7 @@ use anyhow::anyhow;
 
 pub async fn send_device_data() -> anyhow::Result<()> {
     log::info!("Collecting device info");
-    let device = collect_device_info();
+    let device = collect_device_info()?;
     let client = reqwest::Client::new();
 
     let config = crate::configuration::load_config();
