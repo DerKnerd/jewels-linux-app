@@ -4,6 +4,7 @@ use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QVariant};
 use futures_util::StreamExt;
+use libflatpak::glib::Error;
 use libflatpak::prelude::{InstallationExt, InstalledRefExt, RefExt, RemoteExt, TransactionExt};
 use libflatpak::{Transaction, gio, glib};
 use libjewels::alpm::{DownloadProgress, FlatpakProgress, InstallProgress, UpdatablePackage};
@@ -555,21 +556,31 @@ impl ffi::Updates {
                     .await;
             let mut packages = vec![];
             let mut failed = false;
-            if let Ok(pacman) = pacman {
-                let mut pacman = pacman.into_iter().map(Package::from).collect::<Vec<_>>();
-                packages.append(&mut pacman);
-            } else {
-                failed = true;
+            match pacman {
+                Ok(pacman) => {
+                    let mut pacman = pacman.into_iter().map(Package::from).collect::<Vec<_>>();
+                    packages.append(&mut pacman);
+                }
+                Err(err) => {
+                    failed = true;
+                    log::error!("Failed to refresh pacman packages: {err}");
+                }
             }
-            if !failed && let Ok(aur) = aur {
-                let mut aur = aur.into_iter().map(Package::from).collect::<Vec<_>>();
-                packages.append(&mut aur);
-            } else {
-                failed = true;
+            if !failed {
+                match aur {
+                    Ok(aur) => {
+                        let mut aur = aur.into_iter().map(Package::from).collect::<Vec<_>>();
+                        packages.append(&mut aur);
+                    }
+                    Err(err) => {
+                        log::error!("Failed to refresh aur packages: {err}");
+                        failed = true;
+                    }
+                }
             }
 
             if !failed {
-                failed = async {
+                let flatpak = async {
                     let none_gio = None::<&gio::Cancellable>;
                     let installation = libflatpak::Installation::new_system(none_gio)?;
                     let remotes = installation.list_remotes(none_gio)?;
@@ -611,8 +622,14 @@ impl ffi::Updates {
 
                     Ok(()) as Result<(), glib::Error>
                 }
-                .await
-                .is_err();
+                .await;
+                match flatpak {
+                    Err(err) => {
+                        failed = true;
+                        log::error!("Failed to refresh flatpak packages: {err}");
+                    }
+                    _ => {}
+                }
             }
 
             qt_thread
