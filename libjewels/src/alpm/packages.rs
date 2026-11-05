@@ -337,7 +337,7 @@ impl AlpmHelper {
         Ok(result)
     }
 
-    pub fn get_foreign_packages(self) -> anyhow::Result<Vec<(String, String)>> {
+    pub fn get_foreign_packages(self) -> anyhow::Result<Vec<(String, String, i64, i64)>> {
         let handle = get_alpm_handle()?;
 
         let local_db = handle.localdb();
@@ -348,7 +348,7 @@ impl AlpmHelper {
             .iter()
             // A package is "foreign" when none of the sync dbs know about it
             .filter(|pkg| sync_dbs.pkg(pkg.name()).is_err())
-            .map(|pkg| (pkg.name().to_string(), pkg.version().to_string()))
+            .map(|pkg| (pkg.name().to_string(), pkg.version().to_string(), pkg.build_date(), pkg.install_date().unwrap_or(0)))
             .collect();
 
         Ok(foreign)

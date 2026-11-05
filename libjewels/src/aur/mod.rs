@@ -1,15 +1,15 @@
 mod build;
 pub mod consts;
 mod gpg;
+mod http;
 
 use crate::alpm::{AlpmHelper, DownloadProgressSender, InstallProgressSender, LogMessageSender};
 use crate::aur::build::AurBuilder;
 use crate::aur::consts::{JEWELS_BUILD_DIR, JEWELS_PACKAGE_DIR, JEWELS_USER};
-use raur::Raur;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use tokio::sync::mpsc::{Receiver, Sender};
-use zbus::zvariant::Type;
+use zbus::Type;
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Serialize, Deserialize, Type)]
 pub struct AurPackage {
@@ -68,14 +68,13 @@ impl AurHelper {
         log::info!("Getting foreign packages...");
         let foreign_packages = alpm_helper.get_foreign_packages()?;
 
-        let raur = raur::Handle::new();
         let names = foreign_packages
             .iter()
-            .map(|(n, _)| n.as_str())
+            .map(|(n, _, _, _)| n.to_owned())
             .collect::<Vec<_>>();
 
         log::info!("Getting AUR packages...");
-        let aur_pkgs = raur.info(&names).await?;
+        let aur_pkgs = http::package_info(names).await;
 
         let aur_map = aur_pkgs
             .iter()
@@ -85,10 +84,13 @@ impl AurHelper {
         let mut packages_to_upgrade = vec![];
 
         log::info!("Compiling packages to upgrade...");
-        for (name, local_ver) in foreign_packages {
-            if let Some(&aur_pkg) = aur_map.get(name.as_str())
-                && alpm::vercmp(aur_pkg.version.as_str(), local_ver.as_str())
-                    == std::cmp::Ordering::Greater
+        for (name, local_ver, build_date, install_date) in foreign_packages {
+            let pkg = aur_map.get(name.as_str());
+            if let Some(&aur_pkg) = pkg
+                && (install_date < aur_pkg.last_modified
+                    || build_date < aur_pkg.last_modified
+                    || alpm::vercmp(aur_pkg.version.as_str(), local_ver.as_str())
+                        == std::cmp::Ordering::Greater)
             {
                 packages_to_upgrade.push(AurPackage {
                     name: aur_pkg.name.clone(),

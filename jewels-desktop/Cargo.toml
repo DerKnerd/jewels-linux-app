@@ -32,3 +32,6 @@ zbus = { workspace = true }
 
 [build-dependencies]
 cxx-qt-build = { workspace = true }
+
+[package.metadata.cargo-machete]
+ignored = ["cxx"]
