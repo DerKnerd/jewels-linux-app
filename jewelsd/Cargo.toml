@@ -8,6 +8,3 @@ libjewels = { path = "../libjewels" }
 
 env_logger = { workspace = true }
 log = { workspace = true }
-tokio = { workspace = true }
-zbus = { workspace = true }
-zbus_systemd = { workspace = true }

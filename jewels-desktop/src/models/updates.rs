@@ -4,7 +4,6 @@ use cxx_qt::CxxQtType;
 use cxx_qt::Threading;
 use cxx_qt_lib::{QModelIndex, QString, QVariant};
 use futures_util::StreamExt;
-use libflatpak::glib::Error;
 use libflatpak::prelude::{InstallationExt, InstalledRefExt, RefExt, RemoteExt, TransactionExt};
 use libflatpak::{Transaction, gio, glib};
 use libjewels::alpm::{DownloadProgress, FlatpakProgress, InstallProgress, UpdatablePackage};
@@ -623,12 +622,9 @@ impl ffi::Updates {
                     Ok(()) as Result<(), glib::Error>
                 }
                 .await;
-                match flatpak {
-                    Err(err) => {
-                        failed = true;
-                        log::error!("Failed to refresh flatpak packages: {err}");
-                    }
-                    _ => {}
+                if let Err(err) = flatpak {
+                    failed = true;
+                    log::error!("Failed to refresh flatpak packages: {err}");
                 }
             }
 
